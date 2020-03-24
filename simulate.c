@@ -167,47 +167,67 @@ void simulate(int id, int n_particles, particle_state* p,
 
     random_init(&sim.random_data, 0);
 
+#ifdef _OPENMP
     print_out(VERBOSE_NORMAL,"%s: All fields initialized. Simulation begins, %d threads.\n",
               targetname, omp_get_max_threads());
+#else
+    print_out(VERBOSE_NORMAL,"%s: All fields initialized. Simulation begins, NO THREADS.\n",
+              targetname);
+#endif
+
 
     /**************************************************************************/
     /* 4. Threads are spawned. One thread is dedicated for monitoring         */
     /*    progress, if monitoring is active.                                  */
     /*                                                                        */
     /**************************************************************************/
+#ifndef GPU
     #pragma omp parallel sections num_threads(2)
+#endif
     {
+#ifndef GPU
         #pragma omp section
+#endif
         {
             /******************************************************************/
             /* 5. Other threads execute marker simulation using the mode the  */
             /*    user has chosen.                                            */
             /*                                                                */
             /******************************************************************/
+//CLAA
+            printf("SIZE OF PQ.P: %d   %d\n\n",pq.n,n_particles);
             if(pq.n > 0 && (sim.sim_mode == simulate_mode_gc
                         || sim.sim_mode == simulate_mode_hybrid)) {
                 if(sim.enable_ada) {
+                    printf(">>>>>>>>>>>>>>>>>>>>>>> 1\n");
                     #pragma omp parallel
                     simulate_gc_adaptive(&pq, &sim);
                 }
                 else {
+                    printf(">>>>>>>>>>>>>>>>>>>>>>> 2\n");
                     #pragma omp parallel
                     simulate_gc_fixed(&pq, &sim);
                 }
             }
             else if(pq.n > 0 && sim.sim_mode == simulate_mode_fo) {
 
+                printf(">>>>>>>>>>>>>>>>>>>>>>> 3\n");
+                #ifndef GPU
                 #pragma omp parallel
+                #endif
                 simulate_fo_fixed(&pq, &sim);
             }
             else if(pq.n > 0 && sim.sim_mode == simulate_mode_ml) {
-
+ 
+                printf(">>>>>>>>>>>>>>>>>>>>>>> 4\n");
                 #pragma omp parallel
                 simulate_ml_adaptive(&pq, &sim);
             }
         }
 
+#ifndef GPU
         #pragma omp section
+#endif
         {
 #if VERBOSE > 1
             /* Update progress until simulation is complete.             */
@@ -273,15 +293,21 @@ void simulate(int id, int n_particles, particle_state* p,
 
         sim.record_mode = 1;//Make sure we don't collect fos in gc diagnostics
 
+#ifndef GPU
         #pragma omp parallel sections num_threads(2)
+#endif
         {
+#ifndef GPU
             #pragma omp section
+#endif
             {
                 #pragma omp parallel
                 simulate_fo_fixed(&pq_hybrid, &sim);
             }
 
+#ifndef GPU
             #pragma omp section
+#endif
             {
 #if VERBOSE > 1
                 /* Trim .h5 from filename and replace it with _??????.stdout */
@@ -388,6 +414,8 @@ void sim_init(sim_data* sim, sim_offload_data* offload_data) {
  * @param finished pointer to number of finished markers in simulation queue
  */
 void sim_monitor(char* filename, volatile int* n, volatile int* finished) {
+// With the gcc offload compiler the linker gives the error: "unresolved symbol _fseeko_r"
+#ifdef CLAA
     /* Open a file for writing simulation progress */
     FILE *f = fopen(filename, "w");
     if (f == NULL) {
@@ -421,9 +449,11 @@ void sim_monitor(char* filename, volatile int* n, volatile int* finished) {
                     100*fracprog, timespent/3600, (1/fracprog-1)*timespent/3600);
         }
         fflush(f);
-        sleep(A5_PRINTPROGRESSINTERVAL);
+//CLAA
+        //sleep(A5_PRINTPROGRESSINTERVAL);
     }
 
     fprintf(f, "Simulation finished.\n");
     fclose(f);
+#endif
 }

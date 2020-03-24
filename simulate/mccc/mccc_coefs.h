@@ -263,7 +263,8 @@ static void mccc_coefs_clog(real* clogab, real ma, real qa, real va, int nspec,
  */
 #pragma omp declare simd uniform(mdata)
 static void mccc_coefs_mufun(real mufun[3], real x, mccc_data* mdata) {
-
+//CLAA TO BE ANALYZED
+/*
     if(!mdata->usetabulated && x!= 0) {
         real expm2x = exp(-x*x);
         real erfx   = erf(x);
@@ -280,7 +281,7 @@ static void mccc_coefs_mufun(real mufun[3], real x, mccc_data* mdata) {
         mufun[1] = 0;
         mufun[2] = 4 / ( 3 * CONST_SQRTPI );
     }
-
+*/
 }
 
 #pragma omp end declare target

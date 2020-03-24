@@ -1,4 +1,4 @@
-CC=h5pcc
+CC=gcc
 
 ifdef NSIMD
 	DEFINES+=-DNSIMD=$(NSIMD)
@@ -8,19 +8,13 @@ ifdef TARGET
     DEFINES+=-DTARGET=$(TARGET)
 endif
 
-ifdef VERBOSE
-	DEFINES+=-DVERBOSE=$(VERBOSE)
-else
-	DEFINES+=-DVERBOSE=1
-endif
-
 ifeq ($(SINGLEPRECISION),1)
 	DEFINES+=-DSINGLEPRECISION
 endif
 
 ifeq ($(MPI),1)
 	DEFINES+=-DMPI
-	CC=h5pcc
+	CC=mpicc
 endif
 
 ifeq ($(RANDOM),MKL)
@@ -40,7 +34,22 @@ ifneq ($(CC),h5cc)
 	endif
 endif
 
-CFLAGS+=-lm -Wall -fopenmp -fPIC -std=c11 $(DEFINES) $(FLAGS)
+ifeq ($(OMP),1)
+        CFLAGS+=-fopenmp 
+endif
+
+ifeq ($(GPU),1)
+        DEFINES+=-DGPU
+        CFLAGS+=-foffload="-lm"# -g" #-fno-stack-protector
+endif
+
+ifdef VERBOSE
+        DEFINES+=-DVERBOSE=$(VERBOSE)
+else
+        DEFINES+=-DVERBOSE=1
+endif
+
+CFLAGS+= -O3 -lm -fPIC -std=c11 $(DEFINES) $(FLAGS)
 
 # Write CFLAGS and CC to a file to be included into output
 $(shell echo "#define CFLAGS " $(CFLAGS) > compiler_flags.h)
@@ -112,7 +121,7 @@ OBJS= math.o list.o octree.o error.c \
 	$(PLSOBJS) $(N0OBJS) $(LINTOBJS) $(SPLINEOBJS) \
 	neutral.o plasma.o particle.o endcond.o B_field.o gctransform.o \
 	E_field.o wall.o simulate.o diag.o offload.o \
-	random.o print.c hdf5_interface.o
+	random.o print.o hdf5_interface.o
 
 BINS=test_math test_bsearch \
 	test_wall_2d test_plasma test_random \

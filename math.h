@@ -100,6 +100,11 @@ void math_uniquecount(int* in, int* unique, int* count, int n);
 real* math_rsearch(const real key, const real* base, int num);
 #pragma omp declare simd uniform(rv,zv,n)
 int math_point_in_polygon(real r, real z, real* rv, real* zv, int n);
+
+int rcomp(const void* a, const void* b);
+double math_simpson_helper(double (*f)(double), double a, double b, double eps,
+                           double S, double fa, double fb, double fc,
+                           int bottom);
 #pragma omp end declare target
 
 

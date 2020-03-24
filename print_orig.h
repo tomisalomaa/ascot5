@@ -14,35 +14,22 @@ enum {
     VERBOSE_IO = 1
 };
 
-extern const char VERBOSE_LEVEL;
+//extern const char VERBOSE_LEVEL;
+extern char verbose_level_local;
 
 /**
  *  * @brief Print to standard output
  *   */
-#ifndef GPU
-#define print_out(v,...) { if(VERBOSE_LEVEL >= (v)) printf(__VA_ARGS__); }
-#else
-#define print_out(v,...) { } 
-#endif
+#define print_out(v,...) { if(verbose_level_local >= (v)) printf(__VA_ARGS__); }
 
 /**
  *  * @brief Print to standard output only for rank 0
  *   */
-#ifndef GPU
-#define print_out0(v,rank,...) { if(VERBOSE_LEVEL >= (v) && (rank)==0) printf(__VA_ARGS__); }
-#else
-#define print_out0(v,...) { } 
-#endif
+#define print_out0(v,rank,...) { if(verbose_level_local >= (v) && (rank)==0) printf(__VA_ARGS__); }
 
 /**
  *  * @brief Print to standard error
  *   */
-#ifndef GPU
 #define print_err(...) fprintf(stderr,__VA_ARGS__)
-#else 
-#define print_err(...) printf(__VA_ARGS__)
-//#define print_err(v,...) { } 
-#endif
 
 #endif
-

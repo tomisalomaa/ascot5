@@ -165,7 +165,9 @@ int B_3DS_init_offload(B_3DS_offload_data* offload_data, real** offload_array) {
     }
 
     /* Print some sanity check on data */
+#ifdef CLAA
     printf("\n3D magnetic field (B_3DS)\n");
+#endif
     print_out(VERBOSE_IO, "Psi-grid: nR = %4.d Rmin = %3.3f m Rmax = %3.3f m\n",
               offload_data->psigrid_n_r,
               offload_data->psigrid_r_min, offload_data->psigrid_r_max);

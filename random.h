@@ -57,6 +57,7 @@ void random_gsl_normal_simd(random_data* rdata, int n, double* r);
 //#define _XOPEN_SOURCE 500
 #include <stdlib.h>
 
+#pragma omp declare target
 typedef void* random_data;
 
 double random_drand48_normal();
@@ -68,6 +69,8 @@ void random_drand48_normal_simd(int n, double* r);
 #define random_normal(data) random_drand_normal()
 #define random_uniform_simd(data, n, r) random_drand48_uniform_simd(n, r)
 #define random_normal_simd(data, n, r) random_drand48_normal_simd(n, r)
+
+#pragma omp end declare target
 
 #endif
 

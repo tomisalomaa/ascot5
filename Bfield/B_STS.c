@@ -185,7 +185,9 @@ int B_STS_init_offload(B_STS_offload_data* offload_data, real** offload_array) {
         return err;
     }
 
+#ifdef CLAA
     printf("\nStellarator magnetic field (B_STS)\n");
+#endif
     print_out(VERBOSE_IO, "Psi-grid: nR = %4.d Rmin = %3.3f m Rmax = %3.3f m\n",
               offload_data->psigrid_n_r,
               offload_data->psigrid_r_min, offload_data->psigrid_r_max);

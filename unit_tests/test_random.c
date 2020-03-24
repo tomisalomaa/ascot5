@@ -20,17 +20,17 @@ int main(int argc, char** argv) {
     random_init(&rdata, 12345);
 
     double t1, t2, t3;
-    t1 = omp_get_wtime();
+    t1 = A5_WTIME;
 
     for(int i = 0; i < N; i++) {
         r[i] = random_uniform(&rdata);
     }
 
-    t2 = omp_get_wtime();
+    t2 = A5_WTIME;
 
     random_uniform_simd(&rdata, N, r);
 
-    t3 = omp_get_wtime();
+    t3 = A5_WTIME;
 
     printf("Serial %lf, SIMD %lf\n", t2-t1, t3-t2);
 
