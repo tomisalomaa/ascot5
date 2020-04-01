@@ -82,7 +82,7 @@ typedef double real;  /**< Double precision float   */
 /** @brief Number of particles simulated simultaneously in a particle group
  *         operations */
 #ifndef NSIMD
-#define NSIMD 16
+#define NSIMD 1000
 #endif
 
 /** @brief Maximum number of plasma species */
