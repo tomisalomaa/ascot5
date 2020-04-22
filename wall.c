@@ -119,6 +119,7 @@ int wall_init(wall_data* w, wall_offload_data* offload_data,
             break;
         default:
             /* Unregonized input. Produce error. */
+           printf("FFFF\n");
             err = 1;
             break;
     }

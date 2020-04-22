@@ -341,17 +341,40 @@ int main(int argc, char** argv) {
         {
             mic0_start = A5_WTIME;
 
-            #pragma omp target device(0) map( \
+            /*#pragma omp target device(0) map( \  */
+            #pragma omp target data map( \
+                offload_data, \
                 ps[0:n_mic], \
                 offload_array[0:offload_data.offload_array_length], \
-                diag_offload_array_mic0[0:sim.diag_offload_data.offload_array_length] \
+                diag_offload_array_mic0[0:sim.diag_offload_data.offload_array_length], \
+                sim \
             )
+            {
+            sim_data *sim_s;
+            particle_queue *pq;
+            particle_queue *pq_hybrid;
+            #ifdef GPU
+            sim_s = (sim_data*) omp_target_alloc(sizeof(sim_data),omp_get_default_device());
+            pq = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
+            pq_hybrid = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
+            #else
+            sim_s = (sim_data*) malloc(sizeof(sim_data));
+            pq = (particle_queue*) malloc(sizeof(particle_queue));
+            pq_hybrid = (particle_queue*) malloc(sizeof(particle_queue));
+            #endif
+            
     printf("=================== PASSED 13 =====================\n");
-            simulate(1, n_mic, ps, &sim, &offload_data, offload_array,
+            //#pragma omp target teams num_teams(64) thread_limit(32) is_device_ptr(sim_s, pq, pq_hybrid)
+            {
+            simulate(1, n_mic, ps, sim_s, pq, pq_hybrid, &sim, &offload_data, offload_array,
                 diag_offload_array_mic0);
+            // end of target
+            }
     printf("=================== PASSED 14 =====================\n");
 
             mic0_end = A5_WTIME;
+            //end of target data
+            }
         }
 #endif
 

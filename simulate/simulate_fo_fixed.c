@@ -27,6 +27,7 @@
 #pragma omp declare target
 #pragma omp declare simd uniform(sim)
 real simulate_fo_fixed_inidt(sim_data* sim, particle_simd_fo* p, int i);
+void simulate_fo_fixed(particle_queue* pq, sim_data* sim);
 #pragma omp end declare target
 
 /**
