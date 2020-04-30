@@ -30,4 +30,11 @@
 #module load cuda 
 
 # Run the program:
-srun ./ompgpu > ompgpu.$SLURM_JOB_ID.out 2> ompgpu.$SLURM_JOB_ID.err
+#srun ./ompgpu > ompgpu.$SLURM_JOB_ID.out 2> ompgpu.$SLURM_JOB_ID.err
+
+# profile the program:
+
+module  load  nsight_systems
+nsys profile -t cuda,nvtx srun ./ompgpu
+
+# to analyze the resulting report1.qdrep, run "nsight-sys" and open it from there.

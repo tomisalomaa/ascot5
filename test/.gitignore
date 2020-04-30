@@ -2,3 +2,4 @@ ompgpu
 ompgpu.*.err
 ompgpu.*.out
 
+*.qdrep
