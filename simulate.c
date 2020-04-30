@@ -141,7 +141,7 @@ void simulate(int id, int n_particles,
     ptr = offload_unpack(offload_data, offload_array,
             sim_offload->wall_offload_data.offload_array_length);
     printf("++++++++++++++++++++++++++++ 1.9\n");
-    wall_init(&sim->wall_data, &sim_offload->wall_offload_data, ptr);
+    wall_init(&sim->wall_data, &sim_offload->wall_offload_data, ptr);  //wall.c
     printf("++++++++++++++++++++++++++++ 1.0\n");
 
     diag_init(&sim->diag_data, &sim_offload->diag_offload_data,
@@ -380,7 +380,7 @@ void simulate(int id, int n_particles,
     /* 8. Execution returns to host where this function was called.           */
     /*                                                                        */
     /**************************************************************************/
-    print_out(VERBOSE_NORMAL, "%s: Simulation complete.\n", targetname);
+    //print_out(VERBOSE_NORMAL, "%s: Simulation complete.\n", targetname);
 }
 
 /**

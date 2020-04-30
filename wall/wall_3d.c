@@ -234,8 +234,10 @@ void wall_3d_init_tree(wall_3d_data* w, real* offload_array) {
 void wall_3d_init_octree(wall_3d_data* w, real* offload_array) {
     /* construct the octree and store triangles there */
     octree_node* tree;
+    printf("ooooooooooooooooooooo 1 %d\n",w->depth);
     octree_create(&tree, w->xmin, w->xmax, w->ymin, w->ymax, w->zmin, w->zmax,
                   w->depth);
+    printf("ooooooooooooooooooooo 2\n");
     int i;
     for(i = 0; i < w->n; i++) {
         real t1[3], t2[3], t3[3];
@@ -250,6 +252,7 @@ void wall_3d_init_octree(wall_3d_data* w, real* offload_array) {
         t3[2] = offload_array[i*9+8];
         octree_add(tree, t1, t2, t3, i);
     }
+    printf("ooooooooooooooooooooo 3\n");
 
     /* create lists for triangles in each grid square and fill the lists
        by querying the octree in each grid point */
@@ -270,28 +273,37 @@ void wall_3d_init_octree(wall_3d_data* w, real* offload_array) {
             }
         }
     }
+    printf("ooooooooooooooooooooo 4\n");
 
     /* construct an array from the triangle lists */
     int list_size = 0;
     for(i = 0; i < ncell; i++) {
         list_size += list_int_size(tri_list[i]);
     }
+    printf("ooooooooooooooooooooo 6\n");
 
     w->tree_array_size = 2*ncell + list_size;
+    printf("w->tree_array_size %d\n",w->tree_array_size);
     w->tree_array = (int*) malloc((w->tree_array_size)*sizeof(int));
 
     int next_empty_list = ncell;
+    printf("ooooooooooooooooooooo 7 %d\n",w->tree_array[0]);
     for(i = 0; i < ncell; i++) {
         w->tree_array[i] = next_empty_list;
+    printf("ooooooooooooooooooooo 7.1\n");
         w->tree_array[next_empty_list] = list_int_size(tri_list[i]);
+    printf("ooooooooooooooooooooo 7.2\n");
         int j;
         for(j = 0; j < w->tree_array[next_empty_list]; j++) {
+            printf("%d, %d\n",i,j);
             w->tree_array[next_empty_list+j+1] = list_int_get(tri_list[i], j);
         }
         next_empty_list += w->tree_array[next_empty_list] + 1;
     }
+    printf("ooooooooooooooooooooo 8\n");
     free(tri_list);
     octree_free(&tree);
+    printf("ooooooooooooooooooooo 9\n");
 }
 
 /**
