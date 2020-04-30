@@ -1,3 +1,4 @@
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +61,7 @@ printf("Loop time: %f\n",tt);
 
 }
 
+#pragma omp declare target
 int setA(float *ain, int i, int j, int *iii, int ny)
 {
 
