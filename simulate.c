@@ -206,7 +206,7 @@ void simulate(int id, int n_particles,
 }
     printf("++++++++++++++++++++++++++++ 5\n");
 
-#pragma omp target teams num_teams(4) thread_limit(8) is_device_ptr(sim, pq, pq_hybrid)
+#pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
 {
     //int ith = omp_get_num_threads();
     //int tth = omp_get_num_teams();

@@ -35,12 +35,13 @@ ifneq ($(CC),h5cc)
 endif
 
 ifeq ($(OMP),1)
-        CFLAGS+=-fopenmp 
+        CFLAGS+=-fopenmp -foffload=disable
 endif
 
 ifeq ($(GPU),1)
         DEFINES+=-DGPU
-        CFLAGS+=-foffload="-lm"# -g" #-fno-stack-protector
+        #CFLAGS+=-foffload="-lm -g" -fno-stack-protector
+        CFLAGS+=-foffload="-lm"
 endif
 
 ifdef VERBOSE
