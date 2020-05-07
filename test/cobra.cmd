@@ -34,7 +34,12 @@
 
 # profile the program:
 
-module  load  nsight_systems
-nsys profile -t cuda,nvtx srun ./ompgpu
-
+#module  load  nsight_systems 
+#nsys profile -t cuda,nvtx srun ./ompgpu
 # to analyze the resulting report1.qdrep, run "nsight-sys" and open it from there.
+
+module  load  cuda
+nv-nsight-cu-cli -o profile.$SLURM_JOB_ID --target-processes all ./ompgpu
+
+# to look at the profile:
+#nv-nsight-cu-cli --import profile.$SLURM_JOB_ID.nsight-cuprof-report > profile.$SLURM_JOB_ID.nsight-cuprof-report.txt
