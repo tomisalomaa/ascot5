@@ -36,7 +36,9 @@ void E_1DS_free_offload(E_1DS_offload_data* offload_data, real** offload_array);
 #pragma omp declare target
 void E_1DS_init(E_1DS_data* Edata, E_1DS_offload_data* offload_data,
                 real* offload_array);
+#ifdef SIMD
 #pragma omp declare simd uniform(Edata,Bdata)
+#endif
 a5err E_1DS_eval_E(real E[3], real r, real phi, real z, E_1DS_data* Edata,
                    B_field_data* Bdata);
 #pragma omp end declare target

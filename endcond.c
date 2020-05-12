@@ -81,7 +81,9 @@ void endcond_check_fo(particle_simd_fo* p_f, particle_simd_fo* p_i,
     int active_tormax    = sim->endcond_active & endcond_tormax;
     int active_cpumax    = sim->endcond_active & endcond_cpumax;
 
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < NSIMD; i++) {
         if(p_f->running[i]) {
 
@@ -210,7 +212,9 @@ void endcond_check_gc(particle_simd_gc* p_f, particle_simd_gc* p_i,
     int active_tormax    = sim->endcond_active & endcond_tormax;
     int active_cpumax    = sim->endcond_active & endcond_cpumax;
 
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(i = 0; i < NSIMD; i++) {
         if(p_f->running[i]) {
             /* Check if the marker time exceeds simulation time */
@@ -343,7 +347,9 @@ void endcond_check_ml(particle_simd_ml* p_f, particle_simd_ml* p_i,
     int active_tormax    = sim->endcond_active & endcond_tormax;
     int active_cpumax    = sim->endcond_active & endcond_cpumax;
 
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(i = 0; i < NSIMD; i++) {
         if(p_f->running[i]) {
             /* Check if the marker time exceeds simulation time */

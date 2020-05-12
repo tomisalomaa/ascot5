@@ -36,7 +36,9 @@ void E_TC_free_offload(E_TC_offload_data* offload_data,
 #pragma omp declare target
 void E_TC_init(E_TC_data* Edata, E_TC_offload_data* offload_data,
                   real* offload_array);
+#ifdef SIMD
 #pragma omp declare simd uniform(Edata,Bdata)
+#endif
 a5err E_TC_eval_E(real E[3], real r, real phi, real z, E_TC_data* Edata,
                   B_field_data* Bdata);
 #pragma omp end declare target

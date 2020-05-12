@@ -30,7 +30,9 @@ void step_fo_vpa(particle_simd_fo* p, real* h, B_field_data* Bdata,
 
     int i;
     /* Following loop will be executed simultaneously for all i */
+#ifdef SIMD
     #pragma omp simd  aligned(h : 64)
+#endif
     for(i = 0; i < NSIMD; i++) {
         if(p->running[i]) {
             a5err errflag = 0;

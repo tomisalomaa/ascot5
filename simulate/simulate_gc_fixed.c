@@ -24,7 +24,9 @@
 #include "mccc/mccc.h"
 
 #pragma omp declare target
+#ifdef SIMD
 #pragma omp declare simd uniform(sim)
+#endif
 real simulate_gc_fixed_inidt(sim_data* sim, particle_simd_gc* p, int i);
 #pragma omp end declare target
 
@@ -65,7 +67,9 @@ void simulate_gc_fixed(particle_queue* pq, sim_data* sim) {
     int n_running = particle_cycle_gc(pq, &p, &sim->B_data, cycle);
 
     /* Determine simulation time-step */
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < NSIMD; i++) {
         if(cycle[i] > 0) {
             hin[i] = simulate_gc_fixed_inidt(sim, &p, i);
@@ -85,7 +89,9 @@ void simulate_gc_fixed(particle_queue* pq, sim_data* sim) {
     while(n_running > 0) {
 
         /* Store marker states */
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i = 0; i < NSIMD; i++) {
             particle_copy_gc(&p, i, &p0, i);
         }
@@ -108,7 +114,9 @@ void simulate_gc_fixed(particle_queue* pq, sim_data* sim) {
 
         /* Update simulation and cpu times */
         cputime = A5_WTIME;
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i = 0; i < NSIMD; i++) {
             if(p.running[i]) {
                 p.time[i] = p.time[i] + hin[i];
@@ -127,7 +135,9 @@ void simulate_gc_fixed(particle_queue* pq, sim_data* sim) {
         n_running = particle_cycle_gc(pq, &p, &sim->B_data, cycle);
 
         /* Determine simulation time-step */
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i = 0; i < NSIMD; i++) {
             if(cycle[i] > 0) {
                 hin[i] = simulate_gc_fixed_inidt(sim, &p, i);

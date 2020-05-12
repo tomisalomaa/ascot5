@@ -36,7 +36,9 @@ void mccc_fo_euler(particle_simd_fo* p, real* h, B_field_data* Bdata,
     const real* qb = plasma_get_species_charge(pdata);
     const real* mb = plasma_get_species_mass(pdata);
 
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < NSIMD; i++) {
         if(p->running[i]) {
             a5err errflag = 0;

@@ -32,7 +32,9 @@ void step_ml_cashkarp(particle_simd_ml* p, real* h, real* hnext, real tol,
 
     int i;
     /* Following loop will be executed simultaneously for all i */
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(i = 0; i < NSIMD; i++) {
         if(p->running[i]) {
             a5err errflag = 0;

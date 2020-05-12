@@ -54,23 +54,39 @@ void B_GS_free_offload(B_GS_offload_data* offload_data, real** offload_array);
 #pragma omp declare target
 void B_GS_init(B_GS_data* Bdata, B_GS_offload_data* offload_data,
                real* offload_array);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 a5err B_GS_eval_B(real B[3], real r, real phi, real z, B_GS_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 a5err B_GS_eval_psi(real* psi, real r, real phi, real z, B_GS_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 a5err B_GS_eval_psi_dpsi(real psi_dpsi[4], real r, real phi, real z,
                          B_GS_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 a5err B_GS_eval_rho(real* rho, real psi, B_GS_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 a5err B_GS_eval_rho_drho(real rho_drho[4], real r, real phi, real z,
                          B_GS_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 a5err B_GS_eval_B_dB(real B_dB[12], real r, real phi, real z, B_GS_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 real B_GS_get_axis_r(B_GS_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 real B_GS_get_axis_z(B_GS_data* Bdata);
 #pragma omp end declare target
 

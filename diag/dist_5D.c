@@ -119,7 +119,9 @@ void dist_5D_update_fo(dist_5D_data* dist, particle_simd_fo* p_f,
     int ok[NSIMD];
     real weight[NSIMD];
 
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < NSIMD; i++) {
         if(p_f->running[i]) {
             i_r[i] = floor((p_f->r[i] - dist->min_r)
@@ -213,7 +215,9 @@ void dist_5D_update_gc(dist_5D_data* dist, particle_simd_gc* p_f,
     int ok[NSIMD];
     real weight[NSIMD];
 
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < NSIMD; i++) {
         if(p_f->running[i]) {
             i_r[i] = floor((p_f->r[i] - dist->min_r)

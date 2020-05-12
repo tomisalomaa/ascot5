@@ -50,20 +50,32 @@ void plasma_1DS_free_offload(plasma_1DS_offload_data* offload_data,
 void plasma_1DS_init(plasma_1DS_data* pls_data,
                      plasma_1DS_offload_data* offload_data,
                      real* offload_array);
+#ifdef SIMD
 #pragma omp declare simd uniform(pls_data)
+#endif
 a5err plasma_1DS_eval_temp(real* temp, real rho, int species,
                            plasma_1DS_data* pls_data);
+#ifdef SIMD
 #pragma omp declare simd uniform(pls_data)
+#endif
 a5err plasma_1DS_eval_dens(real* dens, real rho, int species,
                            plasma_1DS_data* pls_data);
+#ifdef SIMD
 #pragma omp declare simd uniform(pls_data)
+#endif
 a5err plasma_1DS_eval_densandtemp(real* dens, real* temp, real rho,
                                   plasma_1DS_data* pls_data);
+#ifdef SIMD
 #pragma omp declare simd uniform(pls_data)
+#endif
 int plasma_1DS_get_n_species(plasma_1DS_data* pls_data);
+#ifdef SIMD
 #pragma omp declare simd uniform(pls_data)
+#endif
 const real* plasma_1DS_get_species_mass(plasma_1DS_data* pls_data);
+#ifdef SIMD
 #pragma omp declare simd uniform(pls_data)
+#endif
 const real* plasma_1DS_get_species_charge(plasma_1DS_data* pls_data);
 #pragma omp end declare target
 

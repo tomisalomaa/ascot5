@@ -22,7 +22,9 @@
 #include "../consts.h"
 
 #pragma omp declare target
+#ifdef SIMD
 #pragma omp declare simd uniform(sim)
+#endif
 real simulate_ml_adaptive_inidt(sim_data* sim, particle_simd_ml* p, int i);
 #pragma omp end declare target
 
@@ -76,7 +78,9 @@ void simulate_ml_adaptive(particle_queue* pq, sim_data* sim) {
     int n_running = particle_cycle_ml(pq, &p, &sim->B_data, cycle);
 
     /* Determine simulation time-step */
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(i = 0; i < NSIMD; i++) {
         if(cycle[i] > 0) {
             /* Determine initial time-step */
@@ -100,7 +104,9 @@ void simulate_ml_adaptive(particle_queue* pq, sim_data* sim) {
     while(n_running > 0) {
 
         /* Store marker states in case time step will be rejected */
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(i = 0; i < NSIMD; i++) {
             particle_copy_ml(&p, i, &p0, i);
 
@@ -114,7 +120,9 @@ void simulate_ml_adaptive(particle_queue* pq, sim_data* sim) {
         if(sim->enable_orbfol) {
             step_ml_cashkarp(&p, hin, hout, tol, &sim->B_data);
             /* Check whether time step was rejected */
+#ifdef SIMD
             #pragma omp simd
+#endif
             for(i = 0; i < NSIMD; i++) {
                 if(p.running[i] && hout[i] < 0){
                     p.running[i] = 0;
@@ -127,7 +135,9 @@ void simulate_ml_adaptive(particle_queue* pq, sim_data* sim) {
 
 
         cputime = A5_WTIME;
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(i = 0; i < NSIMD; i++) {
             if(!p.err[i]) {
                 /* Check other time step limitations */
@@ -186,7 +196,9 @@ void simulate_ml_adaptive(particle_queue* pq, sim_data* sim) {
         n_running = particle_cycle_ml(pq, &p, &sim->B_data, cycle);
 
         /* Determine simulation time-step for new particles */
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(i = 0; i < NSIMD; i++) {
             if(cycle[i] > 0) {
                 hin[i] = simulate_ml_adaptive_inidt(sim, &p, i);

@@ -33,9 +33,13 @@ void wall_2d_free_offload(wall_2d_offload_data* offload_data,
 #pragma omp declare target
 void wall_2d_init(wall_2d_data* w, wall_2d_offload_data* offload_data,
                   real* offload_array);
+#ifdef SIMD
 #pragma omp declare simd uniform(w)
+#endif
 int wall_2d_inside(real r, real z, wall_2d_data* w);
+#ifdef SIMD
 #pragma omp declare simd uniform(w)
+#endif
 int wall_2d_hit_wall(real r1, real phi1, real z1, real r2, real phi2, real z2,
                      wall_2d_data* w);
 #pragma omp end declare target

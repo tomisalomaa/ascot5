@@ -37,11 +37,17 @@ typedef struct {
 } mccc_wienarr;
 
 #pragma omp declare target
+#ifdef SIMD
 #pragma omp declare simd
+#endif
 void mccc_wiener_initialize(mccc_wienarr* w, real initime);
+#ifdef SIMD
 #pragma omp declare simd
+#endif
 a5err mccc_wiener_generate(mccc_wienarr* w, real t, int* windex, real* rand5);
+#ifdef SIMD
 #pragma omp declare simd
+#endif
 a5err mccc_wiener_clean(mccc_wienarr* w, real t);
 
 #pragma omp end declare target

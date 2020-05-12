@@ -15,7 +15,9 @@
 #include "diag_orb.h"
 
 #pragma omp declare target
+#ifdef SIMD
 #pragma omp declare simd uniform(ang0)
+#endif
 real diag_orb_check_plane_crossing(real fang, real iang, real ang0);
 #pragma omp end declare target
 
@@ -162,7 +164,9 @@ void diag_orb_update_fo(diag_orb_data* data, particle_simd_fo* p_f,
 
     if(data->mode == DIAG_ORB_INTERVAL) {
 
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i= 0; i < NSIMD; i++) {
 
             /* Mask dummy markers */
@@ -232,7 +236,9 @@ void diag_orb_update_fo(diag_orb_data* data, particle_simd_fo* p_f,
     }
     else if(data->mode == DIAG_ORB_POINCARE) {
 
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i= 0; i < NSIMD; i++) {
             /* Mask dummy markers and thosw whose time-step was rejected. */
             if( p_f->id[i] > 0 && (p_f->time[i] != p_i->time[i]) ) {
@@ -326,7 +332,9 @@ void diag_orb_update_gc(diag_orb_data* data, particle_simd_gc* p_f,
                         particle_simd_gc* p_i) {
 
     if(data->mode == DIAG_ORB_INTERVAL) {
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i= 0; i < NSIMD; i++) {
 
             /* Mask dummy markers */
@@ -395,7 +403,9 @@ void diag_orb_update_gc(diag_orb_data* data, particle_simd_gc* p_f,
         }
     }
     else if(data->mode == DIAG_ORB_POINCARE) {
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i= 0; i < NSIMD; i++) {
             /* Mask dummy markers and thosw whose time-step was rejected. */
             if( p_f->id[i] > 0 && (p_f->time[i] != p_i->time[i]) ) {
@@ -490,7 +500,9 @@ void diag_orb_update_ml(diag_orb_data* data, particle_simd_ml* p_f,
 
     if(data->mode == DIAG_ORB_INTERVAL) {
 
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i= 0; i < NSIMD; i++) {
 
             /* Mask dummy markers */
@@ -548,7 +560,9 @@ void diag_orb_update_ml(diag_orb_data* data, particle_simd_ml* p_f,
         }
     }
     else if(data->mode == DIAG_ORB_POINCARE) {
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i= 0; i < NSIMD; i++) {
             /* Mask dummy markers and thosw whose time-step was rejected. */
             if( p_f->id[i] > 0 && (p_f->time[i] != p_i->time[i]) ) {

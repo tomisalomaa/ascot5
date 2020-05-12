@@ -51,14 +51,18 @@ double random_gsl_normal(random_data* rdata) {
 }
 
 void random_gsl_uniform_simd(random_data* rdata, int n, double* r) {
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < n; i++) {
         r[i] = gsl_rng_uniform(rdata->r);
     }
 }
 
 void random_gsl_normal_simd(random_data* rdata, int n, double* r) {
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < n; i++) {
         r[i] = gsl_ran_gaussian(rdata->r, 1.0);
     }
@@ -81,7 +85,9 @@ double random_drand48_normal() {
 }
 
 void random_drand48_uniform_simd(int n, double* r) {
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < n; i++) {
         r[i] = drand48();
     }
@@ -93,7 +99,9 @@ void random_drand48_normal_simd(int n, double* r) {
 
 #if A5_CCOL_USE_GEOBM == 1
     /* The geometric form */
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < n; i=i+2) {
         w = 2.0;
         while( w >= 1.0 ) {
@@ -111,7 +119,9 @@ void random_drand48_normal_simd(int n, double* r) {
 #else
     /* The common form */
     double s;
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < n; i=i+2) {
         x1 = drand48(rdata);
         x2 = drand48(rdata);

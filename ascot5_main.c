@@ -98,14 +98,12 @@ void marker_summary(particle_state* p, int n);
  */
 int main(int argc, char** argv) {
 
-    printf("=================== STARTED =====================\n");
     /* Read and parse command line arguments */
     sim_offload_data sim;
     if( read_arguments(argc, argv, &sim) ) {
         abort();
         return 1;
     }
-    printf("=================== PASSED 1 =====================\n");
 
     /* Get MPI rank and set qid for the run*/
     int mpi_rank, mpi_size;
@@ -138,7 +136,6 @@ int main(int argc, char** argv) {
         mpi_rank = sim.mpi_rank;
         mpi_size = sim.mpi_size;
     }
-    printf("=================== PASSED 2 =====================\n");
 
     print_out0(VERBOSE_MINIMAL, mpi_rank,
                "ASCOT5_MAIN\n");
@@ -165,7 +162,6 @@ int main(int argc, char** argv) {
     real* plasma_offload_array;
     real* neutral_offload_array;
     real* wall_offload_array;
-    printf("=================== PASSED 3 =====================\n");
 
     /* Read input from the HDF5 file */
     if( hdf5_interface_read_input(&sim,
@@ -182,7 +178,6 @@ int main(int argc, char** argv) {
         abort();
         return 1;
     };
-    printf("=================== PASSED 4 =====================\n");
     simulate_init_offload(&sim);
 
     /* Pack offload data into single array and free individual offload arrays */
@@ -208,20 +203,16 @@ int main(int argc, char** argv) {
     offload_pack(&offload_data, &offload_array, wall_offload_array,
                  sim.wall_offload_data.offload_array_length);
     wall_free_offload(&sim.wall_offload_data, &wall_offload_array);
-    printf("=================== PASSED 5 =====================\n");
 
 
     /* Initialize diagnostics offload data.
      * Separate arrays for host and target */
 #ifdef TARGET
     int iiiii = TARGET;
-    printf("TTTTTTTTTTARGET = %d\n",iiiii);
     real* diag_offload_array_mic0;
     real* diag_offload_array_mic1;
     diag_init_offload(&sim.diag_offload_data, &diag_offload_array_mic0, n);
-    printf("=================== PASSED 6 =====================\n");
     diag_init_offload(&sim.diag_offload_data, &diag_offload_array_mic1, n);
-    printf("=================== PASSED 7 =====================\n");
 #else
     real* diag_offload_array_host;
     diag_init_offload(&sim.diag_offload_data, &diag_offload_array_host, n);
@@ -241,7 +232,6 @@ int main(int argc, char** argv) {
         sprintf(temp, "_%06d.h5", mpi_rank);
         strcat(sim.hdf5_out, temp);
     }
-    printf("=================== PASSED 8 =====================\n");
 
     /* Choose which markers are used in this MPI process. Simply put, markers
      * are divided into mpi_size sequential blocks and the mpi_rank:th block
@@ -274,7 +264,6 @@ int main(int argc, char** argv) {
     print_out0(VERBOSE_NORMAL, mpi_rank,
                "Marker states initialized.\n");
 
-    printf("=================== PASSED 9 =====================\n");
     /* Initialize results group in the output file */
     print_out0(VERBOSE_IO, mpi_rank, "\nPreparing output.\n")
     if( hdf5_interface_init_results(&sim, qid) ) {
@@ -304,7 +293,6 @@ int main(int argc, char** argv) {
     int n_mic = n / TARGET;
     int n_host = 0;
 #else
-    printf("=================== PASSED 10 =====================\n");
     int n_mic = 0;
     int n_host = n;
 #endif
@@ -312,16 +300,13 @@ int main(int argc, char** argv) {
     double mic0_start = 0, mic0_end=0,
         mic1_start=0, mic1_end=0,
         host_start=0, host_end=0;
-    printf("=================== PASSED 10.1 =====================\n");
 
     //fflush(stdout);
 
     /* Allow threads to spawn threads */
-    printf("=================== PASSED 11 =====================\n");
 #ifdef _OPENMP
     omp_set_nested(1);
 #endif
-    printf("=================== PASSED 12 =====================\n");
 
     /* Actual marker simulation happens here. Threads are spawned which
      * distribute the execution between target(s) and host. Both input and
@@ -341,7 +326,11 @@ int main(int argc, char** argv) {
         {
             mic0_start = A5_WTIME;
 
-            /*#pragma omp target device(0) map( \  */
+    printf("Number of devices = %d\n\n",omp_get_num_devices());
+
+ 
+
+            /* pragma omp target device(0) map( \  */
             #pragma omp target data map( \
                 offload_data, \
                 ps[0:n_mic], \
@@ -350,27 +339,25 @@ int main(int argc, char** argv) {
                 sim \
             )
             {
-            sim_data *sim_s;
-            particle_queue *pq;
-            particle_queue *pq_hybrid;
-            #ifdef GPU
-            sim_s = (sim_data*) omp_target_alloc(sizeof(sim_data),omp_get_default_device());
-            pq = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
-            pq_hybrid = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
-            #else
-            sim_s = (sim_data*) malloc(sizeof(sim_data));
-            pq = (particle_queue*) malloc(sizeof(particle_queue));
-            pq_hybrid = (particle_queue*) malloc(sizeof(particle_queue));
-            #endif
+           // sim_data *sim_s;
+           // particle_queue *pq;
+           // particle_queue *pq_hybrid;
+           // #ifdef GPU
+           // sim_s = (sim_data*) omp_target_alloc(sizeof(sim_data),omp_get_default_device());
+           // pq = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
+           // pq_hybrid = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
+           // #else
+           // sim_s = (sim_data*) malloc(sizeof(sim_data));
+           // pq = (particle_queue*) malloc(sizeof(particle_queue));
+           // pq_hybrid = (particle_queue*) malloc(sizeof(particle_queue));
+           // #endif
             
-    printf("=================== PASSED 13 =====================\n");
             //#pragma omp target teams num_teams(64) thread_limit(32) is_device_ptr(sim_s, pq, pq_hybrid)
             {
-            simulate(1, n_mic, ps, sim_s, pq, pq_hybrid, &sim, &offload_data, offload_array,
+            simulate(1, n_mic, ps, &sim, &offload_data, offload_array,
                 diag_offload_array_mic0);
             // end of target
             }
-    printf("=================== PASSED 14 =====================\n");
 
             mic0_end = A5_WTIME;
             //end of target data
@@ -404,10 +391,8 @@ int main(int argc, char** argv) {
         #pragma omp section
         {
             host_start = A5_WTIME;
-    printf("=================== PASSED NOTARGET 13 =====================\n");
             simulate(0, n_host, ps+2*n_mic, &sim, &offload_data,
                 offload_array, diag_offload_array_host);
-    printf("=================== PASSED NOTARGET 14 =====================\n");
             host_end = A5_WTIME;
         }
 #endif
@@ -416,11 +401,9 @@ int main(int argc, char** argv) {
     /* Code execution returns to host. */
     print_out0(VERBOSE_NORMAL, mpi_rank, "mic0 %lf s, mic1 %lf s, host %lf s\n",
         mic0_end-mic0_start, mic1_end-mic1_start, host_end-host_start);
-    printf("=================== PASSED 15 =====================\n");
 
     /* Free input data */
     offload_free_offload(&offload_data, &offload_array);
-    printf("=================== PASSED 16 =====================\n");
 
     /* Write endstate */
     if( hdf5_interface_write_state(sim.hdf5_out, "endstate", n, ps) ) {
@@ -438,18 +421,13 @@ int main(int argc, char** argv) {
                    "\nCombining and writing diagnostics.\n");
     int err_writediag = 0;
 #ifdef TARGET
-    printf("=================== PASSED 17 =====================\n");
-// CLAA This is failing probably due to previous memory management problems: reactivate at the end
-    //diag_sum(&sim.diag_offload_data,
-    //         diag_offload_array_mic0, diag_offload_array_mic1);
-    //printf("=================== PASSED 17.1 =====================\n");
-    //err_writediag = hdf5_interface_write_diagnostics(
-    //    &sim, diag_offload_array_mic0, sim.hdf5_out);
-    //printf("=================== PASSED 17.2 =====================\n");
+    diag_sum(&sim.diag_offload_data,
+             diag_offload_array_mic0, diag_offload_array_mic1);
+    err_writediag = hdf5_interface_write_diagnostics(
+        &sim, diag_offload_array_mic0, sim.hdf5_out);
 #else
     err_writediag = hdf5_interface_write_diagnostics(
         &sim, diag_offload_array_host, sim.hdf5_out);
-    printf("=================== PASSED 17.0 =====================\n");
 #endif
     if(err_writediag) {
         print_out0(VERBOSE_MINIMAL, mpi_rank,
@@ -472,7 +450,6 @@ int main(int argc, char** argv) {
 #ifdef TARGET
     diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic0);
     diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic1);
-    printf("=================== PASSED 18 =====================\n");
 #else
     diag_free_offload(&sim.diag_offload_data, &diag_offload_array_host);
 #endif

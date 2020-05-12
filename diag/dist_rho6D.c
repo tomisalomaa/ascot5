@@ -122,7 +122,9 @@ void dist_rho6D_update_fo(dist_rho6D_data* dist, particle_simd_fo* p_f,
     int ok[NSIMD];
     real weight[NSIMD];
 
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < NSIMD; i++) {
         if(p_f->running[i]) {
             i_rho[i] = floor((p_f->rho[i] - dist->min_rho)
@@ -218,7 +220,9 @@ void dist_rho6D_update_gc(dist_rho6D_data* dist, particle_simd_gc* p_f,
     int ok[NSIMD];
     real weight[NSIMD];
 
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < NSIMD; i++) {
         if(p_f->running[i]) {
             real vr, vphi, vz;

@@ -215,7 +215,9 @@
  * @param nb plasma species densities [m^-3]
  * @param Tb plasma species temperatures [J]
  */
+#ifdef SIMD
 #pragma omp declare simd uniform(nspec, mb, qb, nb, Tb)
+#endif
 static void mccc_coefs_clog(real* clogab, real ma, real qa, real va, int nspec,
                             const real* mb, const real* qb, const real* nb,
                             const real* Tb) {
@@ -261,7 +263,9 @@ static void mccc_coefs_clog(real* clogab, real ma, real qa, real va, int nspec,
  * @param x argument for the special functions
  * @param mdata pointer to mccc data
  */
+#ifdef SIMD
 #pragma omp declare simd uniform(mdata)
+#endif
 static void mccc_coefs_mufun(real mufun[3], real x, mccc_data* mdata) {
 //CLAA TO BE ANALYZED
 /*

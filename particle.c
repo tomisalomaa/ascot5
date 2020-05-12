@@ -222,7 +222,8 @@ int particle_cycle_fo(particle_queue* q, particle_simd_fo* p,
              * and store it back to the queue */
             particle_fo_to_state(p, i, q->p[p->index[i]], Bdata);
             newmarker = 1;
-            #pragma omp critical
+            //#pragma omp critical
+            #pragma omp atomic
             q->finished++;
         }
 
@@ -249,7 +250,8 @@ int particle_cycle_fo(particle_queue* q, particle_simd_fo* p,
                     /* Failed! Mark the marker candidate as finished
                      * and try with a new marker state*/
                     q->p[i_prt]->err = err;
-                    #pragma omp critical
+                    //#pragma omp critical
+                    #pragma omp atomic
                     q->finished++;
                 }
                 else {
@@ -262,7 +264,9 @@ int particle_cycle_fo(particle_queue* q, particle_simd_fo* p,
     }
 
     int n_running = 0;
+    #ifdef SIMD
     #pragma omp simd reduction(+:n_running)
+    #endif
     for(int i = 0; i < NSIMD; i++) {
         n_running += p->running[i];
     }
@@ -316,7 +320,8 @@ int particle_cycle_gc(particle_queue* q, particle_simd_gc* p,
              * and store it back to the queue */
             particle_gc_to_state(p, i, q->p[p->index[i]], Bdata);
             newmarker = 1;
-            #pragma omp critical
+            //#pragma omp critical
+            #pragma omp atomic
             q->finished++;
         }
 
@@ -325,8 +330,9 @@ int particle_cycle_gc(particle_queue* q, particle_simd_gc* p,
         while(newmarker) {
             /* Get the next unsimulated marker from the queue */
             int i_prt;
+            // CLAAAAAAAAAA
             #pragma omp critical
-            i_prt = q->next++;
+            i_prt = q->next++; 
 
             if(i_prt >= q->n) {
                 /* The queue is empty, place a dummy marker here */
@@ -343,7 +349,8 @@ int particle_cycle_gc(particle_queue* q, particle_simd_gc* p,
                     /* Failed! Mark the marker candidate as finished
                      * and try with a new marker state*/
                     q->p[i_prt]->err = err;
-                    #pragma omp critical
+                    //#pragma omp critical
+                    #pragma omp atomic
                     q->finished++;
                 }
                 else {
@@ -356,7 +363,9 @@ int particle_cycle_gc(particle_queue* q, particle_simd_gc* p,
     }
 
     int n_running = 0;
+    #ifdef SIMD
     #pragma omp simd reduction(+:n_running)
+    #endif
     for(int i = 0; i < NSIMD; i++) {
         n_running += p->running[i];
     }
@@ -410,7 +419,8 @@ int particle_cycle_ml(particle_queue* q, particle_simd_ml* p,
              * and store it back to the queue */
             particle_ml_to_state(p, i, q->p[p->index[i]], Bdata);
             newmarker = 1;
-            #pragma omp critical
+            //#pragma omp critical
+            #pragma omp atomic
             q->finished++;
         }
 
@@ -437,7 +447,8 @@ int particle_cycle_ml(particle_queue* q, particle_simd_ml* p,
                     /* Failed! Mark the marker candidate as finished
                      * and try with a new marker state*/
                     q->p[i_prt]->err = err;
-                    #pragma omp critical
+                    //#pragma omp critical
+                    #pragma omp atomic
                     q->finished++;
                 }
                 else {
@@ -450,7 +461,9 @@ int particle_cycle_ml(particle_queue* q, particle_simd_ml* p,
     }
 
     int n_running = 0;
+    #ifdef SIMD
     #pragma omp simd reduction(+:n_running)
+    #endif
     for(int i = 0; i < NSIMD; i++) {
         n_running += p->running[i];
     }

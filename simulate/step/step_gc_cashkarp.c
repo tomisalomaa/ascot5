@@ -36,7 +36,9 @@ void step_gc_cashkarp(particle_simd_gc* p, real* h, real* hnext, real tol,
 
     int i;
     /* Following loop will be executed simultaneously for all i */
+#ifdef SIMD
 #pragma omp simd aligned(h, hnext : 64)
+#endif
     for(i = 0; i < NSIMD; i++) {
         if(p->running[i]) {
             a5err errflag = 0;

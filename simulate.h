@@ -197,9 +197,6 @@ void simulate_init_offload(sim_offload_data* sim);
 
 //#pragma omp declare target
 void simulate(int id, int n_particles, particle_state* p,
-              sim_data *sim_s, 
-              particle_queue *pq,
-              particle_queue *pq_hybrid,
               sim_offload_data* sim_offload,
               offload_package* offload_data,
               real* offload_array, real* diag_offload_array);

@@ -44,7 +44,9 @@ void mccc_gc_milstein(particle_simd_gc* p, real* hin, real* hout, real tol,
     const real* qb = plasma_get_species_charge(pdata);
     const real* mb = plasma_get_species_mass(pdata);
 
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < NSIMD; i++) {
         if(p->running[i]) {
             a5err errflag = 0;

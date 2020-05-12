@@ -81,13 +81,26 @@ void sim_monitor(char* filename, volatile int* n, volatile int* finished);
  */
 void simulate(int id, int n_particles, 
         particle_state* p,
-        sim_data *sim,
-        particle_queue *pq,
-        particle_queue *pq_hybrid,        
         sim_offload_data* sim_offload,
         offload_package* offload_data,
         real* offload_array,
         real* diag_offload_array) {
+
+//define pointers to main structures
+
+    sim_data *sim;
+    particle_queue *pq;
+    particle_queue *pq_hybrid;
+    #ifdef GPU
+    sim = (sim_data*) omp_target_alloc(sizeof(sim_data),omp_get_default_device());
+    pq = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
+    pq_hybrid = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
+    #else
+    sim = (sim_data*) malloc(sizeof(sim_data));
+    pq = (particle_queue*) malloc(sizeof(particle_queue));
+    pq_hybrid = (particle_queue*) malloc(sizeof(particle_queue));
+    #endif
+
 
 #pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
 {
@@ -105,48 +118,37 @@ void simulate(int id, int n_particles,
     }
 
 
-    printf("++++++++++++++++++++++++++++ 1\n");
     /**************************************************************************/
     /* 1. Input offload data is unpacked and initialized by calling           */
     /*    respective init functions.                                          */
     /*                                                                        */
     /**************************************************************************/
+
     sim_init(sim, sim_offload);
-    printf("++++++++++++++++++++++++++++ 1.1\n");
 
     real* ptr;
     ptr = offload_unpack(offload_data, offload_array,
             sim_offload->B_offload_data.offload_array_length);
     B_field_init(&sim->B_data, &sim_offload->B_offload_data, ptr);
-    printf("++++++++++++++++++++++++++++ 1.2\n");
 
     ptr = offload_unpack(offload_data, offload_array,
             sim_offload->E_offload_data.offload_array_length);
-    printf("++++++++++++++++++++++++++++ 1.3\n");
     E_field_init(&sim->E_data, &sim_offload->E_offload_data, ptr);
-    printf("++++++++++++++++++++++++++++ 1.4\n");
 
     ptr = offload_unpack(offload_data, offload_array,
             sim_offload->plasma_offload_data.offload_array_length);
-    printf("++++++++++++++++++++++++++++ 1.5\n");
     plasma_init(&sim->plasma_data, &sim_offload->plasma_offload_data, ptr);
-    printf("++++++++++++++++++++++++++++ 1.6\n");
 
     ptr = offload_unpack(offload_data, offload_array,
             sim_offload->neutral_offload_data.offload_array_length);
-    printf("++++++++++++++++++++++++++++ 1.7\n");
     neutral_init(&sim->neutral_data, &sim_offload->neutral_offload_data, ptr);
-    printf("++++++++++++++++++++++++++++ 1.8\n");
 
     ptr = offload_unpack(offload_data, offload_array,
             sim_offload->wall_offload_data.offload_array_length);
-    printf("++++++++++++++++++++++++++++ 1.9\n");
     wall_init(&sim->wall_data, &sim_offload->wall_offload_data, ptr);  //wall.c
-    printf("++++++++++++++++++++++++++++ 1.0\n");
 
     diag_init(&sim->diag_data, &sim_offload->diag_offload_data,
               diag_offload_array);
-    printf("++++++++++++++++++++++++++++ 2\n");
 
     /**************************************************************************/
     /* 2. Meta data (e.g. random number generator) is initialized.            */
@@ -168,10 +170,7 @@ void simulate(int id, int n_particles,
             pq_hybrid->n++;
         }
     }
-    printf("++++++++++++++++++++++++++++ 3\n");
 
-//CLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-    pq->p = (particle_state**) malloc(pq->n * sizeof(particle_state*));
     pq->p = (particle_state**) malloc(pq->n * sizeof(particle_state*));
     pq_hybrid->p = (particle_state**)malloc(pq_hybrid->n*sizeof(particle_state*));
 
@@ -191,7 +190,6 @@ void simulate(int id, int n_particles,
     }
     pq->next = 0;
 
-    printf("++++++++++++++++++++++++++++ 4\n");
     random_init(&sim.random_data, 0);
 
 #ifdef _OPENMP
@@ -204,14 +202,13 @@ void simulate(int id, int n_particles,
 
 // end of first target region
 }
-    printf("++++++++++++++++++++++++++++ 5\n");
 
 #pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
 {
-    //int ith = omp_get_num_threads();
-    //int tth = omp_get_num_teams();
+    int ith = omp_get_num_threads();
+    int tth = omp_get_num_teams();
 
-    //printf("TARGET REGION 2 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+    printf("TARGET REGION 2 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
  
     /**************************************************************************/
     /* 4. Threads are spawned. One thread is dedicated for monitoring         */
@@ -232,37 +229,33 @@ void simulate(int id, int n_particles,
             /*                                                                */
             /******************************************************************/
 //CLAA
-            printf("SIZE OF PQ.P: %d   %d\n\n",pq->n,n_particles);
             if(pq->n > 0 && (sim->sim_mode == simulate_mode_gc
                         || sim->sim_mode == simulate_mode_hybrid)) {
                 if(sim->enable_ada) {
-                    printf(">>>>>>>>>>>>>>>>>>>>>>> 1\n");
+                    printf("Calling simulate_gc_adaptive\n");
                     #pragma omp parallel
                     simulate_gc_adaptive(pq, sim);
                 }
                 else {
-                    printf(">>>>>>>>>>>>>>>>>>>>>>> 2\n");
+                    printf("Calling simulate_gc_fixed\n");
                     #pragma omp parallel
                     simulate_gc_fixed(pq, sim);
                 }
             }
             else if(pq->n > 0 && sim->sim_mode == simulate_mode_fo) {
 
-                printf(">>>>>>>>>>>>>>>>>>>>>>> 3\n");
-
-                //#pragma omp target teams num_teams(64) thread_limit(32) 
+                printf("Calling simulate_fo_fixed\n");
                 #pragma omp parallel
                 {
-                //int ith = omp_get_num_threads();
-                //int tth = omp_get_num_teams();
-
-                //printf("TARGET REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+                int ith = omp_get_num_threads();
+                int tth = omp_get_num_teams();
+                printf("PARALLEL REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
                 simulate_fo_fixed(pq, sim);
                 }
             }
             else if(pq->n > 0 && sim->sim_mode == simulate_mode_ml) {
  
-                printf(">>>>>>>>>>>>>>>>>>>>>>> 4\n");
+                printf("Calling simulate_ml_adaptive\n");
                 #pragma omp parallel
                 simulate_ml_adaptive(pq, sim);
             }
@@ -381,6 +374,7 @@ void simulate(int id, int n_particles,
     /*                                                                        */
     /**************************************************************************/
     //print_out(VERBOSE_NORMAL, "%s: Simulation complete.\n", targetname);
+
 }
 
 /**
@@ -408,6 +402,7 @@ void simulate_init_offload(sim_offload_data* sim) {
  * @param offload_data pointer to offload data struct
  */
 void sim_init(sim_data* sim, sim_offload_data* offload_data) {
+
     sim->sim_mode             = offload_data->sim_mode;
     sim->enable_ada           = offload_data->enable_ada;
     sim->record_mode          = offload_data->record_mode;
@@ -440,7 +435,6 @@ void sim_init(sim_data* sim, sim_offload_data* offload_data) {
 
     mccc_init(&sim->mccc_data, !sim->disable_energyccoll,
               !sim->disable_pitchccoll, !sim->disable_gcdiffccoll);
-
 }
 
 /**

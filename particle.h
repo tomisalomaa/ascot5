@@ -400,32 +400,52 @@ int particle_cycle_ml(particle_queue* q, particle_simd_ml* p,
 void particle_input_to_state(input_particle* p, particle_state* ps,
                              B_field_data* Bdata);
 
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 a5err particle_state_to_fo(particle_state* p, int i, particle_simd_fo* p_fo,
                            int j, B_field_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 void particle_fo_to_state(particle_simd_fo* p_fo, int j, particle_state* p,
                           B_field_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 a5err particle_state_to_gc(particle_state* p, int i, particle_simd_gc* p_gc,
                            int j, B_field_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 void particle_gc_to_state(particle_simd_gc* p_gc, int j, particle_state* p,
                           B_field_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 a5err particle_state_to_ml(particle_state* p, int i, particle_simd_ml* p_ml,
                            int j, B_field_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
+#endif
 void particle_ml_to_state(particle_simd_ml* p_ml, int j, particle_state* p,
                           B_field_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd uniform(p_fo,Bdata)
+#endif
 int particle_fo_to_gc(particle_simd_fo* p_fo, int j, particle_simd_gc* p_gc,
                       B_field_data* Bdata);
+#ifdef SIMD
 #pragma omp declare simd
+#endif
 void particle_copy_fo(particle_simd_fo* p1, int i, particle_simd_fo* p2, int j);
+#ifdef SIMD
 #pragma omp declare simd
+#endif
 void particle_copy_gc(particle_simd_gc* p1, int i, particle_simd_gc* p2, int j);
+#ifdef SIMD
 #pragma omp declare simd
+#endif
 void particle_copy_ml(particle_simd_ml* p1, int i, particle_simd_ml* p2, int j);
 #pragma omp end declare target
 

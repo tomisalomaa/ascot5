@@ -25,7 +25,9 @@
 #include "mccc/mccc.h"
 
 #pragma omp declare target
+#ifdef SIMD
 #pragma omp declare simd uniform(sim)
+#endif
 real simulate_fo_fixed_inidt(sim_data* sim, particle_simd_fo* p, int i);
 void simulate_fo_fixed(particle_queue* pq, sim_data* sim);
 #pragma omp end declare target
@@ -51,6 +53,7 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim);
 void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
     int cycle[NSIMD]  __memalign__; // Flag indigating whether a new marker was initialized
     real hin[NSIMD]  __memalign__;  // Time step
+    int nnnn;
 
     real cputime, cputime_last; // Global cpu time: recent and previous record
 
@@ -67,11 +70,14 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
     }
 
     /* Initialize running particles */
+    printf("=================== PASSED FO_FIXED 2 ===================== %d\n",p.id[0]);
     int n_running = particle_cycle_fo(pq, &p, &sim->B_data, cycle);
-    printf("=================== PASSED FO_FIXED 2 =====================\n");
+    printf("=================== PASSED FO_FIXED 2.1 ===================== %d\n",p.id[0]);
 
     /* Determine simulation time-step */
+#ifdef SIMD
     #pragma omp simd
+#endif
     for(int i = 0; i < NSIMD; i++) {
         if(cycle[i] > 0) {
             hin[i] = simulate_fo_fixed_inidt(sim, &p, i);
@@ -79,7 +85,7 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
         }
     }
 
-    printf("=================== PASSED FO_FIXED 3 =====================\n");
+    printf("=================== PASSED FO_FIXED 3 ===================== %d\n",p.id[0]);
 
     cputime_last = A5_WTIME;
 
@@ -93,15 +99,19 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
      */
     //CLAA
     int ncount = 0;
+    nnnn=0;
     while(n_running > 0) {
-        printf ("=================== N_RUNNING = %d\n",n_running);
+        printf ("=================== N_RUNNING = %d, GPU, %d, %d, %d\n",n_running,nnnn,p.id[0],p.endcond[0]);
+        nnnn++;
         /* Store marker states */
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i = 0; i < NSIMD; i++) {
             particle_copy_fo(&p, i, &p0, i);
         }
 
-    //printf("=================== PASSED FO_FIXED 4 =====================\n");
+    //printf("=================== PASSED FO_FIXED 4 ===================== %d\n",p.id[0]);
         /*************************** Physics **********************************/
 
         /* Volume preserving algorithm for orbit-following */
@@ -122,7 +132,9 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
 
         /* Update simulation and cpu times */
         cputime = A5_WTIME;
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i = 0; i < NSIMD; i++) {
             if(p.running[i]){
                 p.time[i] = p.time[i] + hin[i];
@@ -149,7 +161,9 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
             particle_simd_gc gc_i;
 
             /* Particle to guiding center transformation */
+#ifdef SIMD
             #pragma omp simd
+#endif
             for(int i=0; i<NSIMD; i++) {
                 if(p.running[i]) {
                     particle_fo_to_gc( &p, i, &gc_f, &sim->B_data);
@@ -172,7 +186,9 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
     //printf("=================== PASSED FO_FIXED 10 =====================\n");
 
         /* Determine simulation time-step for new particles */
+#ifdef SIMD
         #pragma omp simd
+#endif
         for(int i = 0; i < NSIMD; i++) {
             if(cycle[i] > 0) {
                 hin[i] = simulate_fo_fixed_inidt(sim, &p, i);
@@ -184,10 +200,11 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
     //printf("\n nsimd, n_running : %d %d %d\n\n",nnn,n_running,ncount);
 #endif
     //printf("=================== PASSED FO_FIXED 11 =====================\n");
-
+    // end of while
     }
 
     /* All markers simulated! */
+
 
 }
 

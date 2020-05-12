@@ -23,7 +23,9 @@
  * @param B_dB magnetic field and derivatives at the guiding center location
  * @param E electric field at the guiding center location
  */
+#ifdef SIMD
 #pragma omp declare simd
+#endif
 static void step_gceom(real* ydot, real* y, real mass, real charge,
                        real* B_dB, real* E) {
 

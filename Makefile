@@ -35,7 +35,8 @@ ifneq ($(CC),h5cc)
 endif
 
 ifeq ($(OMP),1)
-        CFLAGS+=-fopenmp -foffload=disable
+        CFLAGS+=-fopenmp #-DSIMD #-foffload=disable
+        #CFLAGS+=-fopenmp #-foffload=disable
 endif
 
 ifeq ($(GPU),1)

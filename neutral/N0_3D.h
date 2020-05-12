@@ -49,10 +49,14 @@ void N0_3D_free_offload(N0_3D_offload_data* offload_data, real** offload_array);
 #pragma omp declare target
 void N0_3D_init(N0_3D_data* ndata, N0_3D_offload_data* offload_data,
                 real* offload_array);
+#ifdef SIMD
 #pragma omp declare simd uniform(ndata)
+#endif
 a5err N0_3D_eval_n0(real* n0, real r, real phi, real z, int species,
                     N0_3D_data* ndata);
+#ifdef SIMD
 #pragma omp declare simd uniform(ndata)
+#endif
 a5err N0_3D_eval_t0(real* t0, real r, real phi, real z, int species,
                     N0_3D_data* ndata);
 #pragma omp end declare target

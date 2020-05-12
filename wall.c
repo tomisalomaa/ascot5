@@ -115,7 +115,7 @@ int wall_init(wall_data* w, wall_offload_data* offload_data,
             break;
 
         case wall_type_3D:
-            wall_3d_init(&(w->w3d), &(offload_data->w3d), offload_array);
+            //wall_3d_init(&(w->w3d), &(offload_data->w3d), offload_array);
             break;
         default:
             /* Unregonized input. Produce error. */
