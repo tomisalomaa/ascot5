@@ -16,7 +16,9 @@
 #include "../../error.h"
 #include "mccc_wiener.h"
 
+#pragma omp declare target
 const int MCCC_EMPTY = -1; /**< Indicates an empty slot in wiener array */
+#pragma omp end declare target
 
 /**
  * @brief Initializes a struct that stores generated Wiener processes

@@ -41,8 +41,8 @@ endif
 
 ifeq ($(GPU),1)
         DEFINES+=-DGPU
-        #CFLAGS+=-foffload="-lm -g" -fno-stack-protector
-        CFLAGS+=-foffload="-lm"
+        CFLAGS+=-foffload="-lm -g" -fno-stack-protector
+        #CFLAGS+=-foffload="-lm"
 endif
 
 ifdef VERBOSE
@@ -51,7 +51,7 @@ else
         DEFINES+=-DVERBOSE=1
 endif
 
-CFLAGS+= -O3 -lm -fPIC -std=c11 $(DEFINES) $(FLAGS)
+CFLAGS+= -g -lm -fPIC -std=c11 $(DEFINES) $(FLAGS)
 
 # Write CFLAGS and CC to a file to be included into output
 $(shell echo "#define CFLAGS " $(CFLAGS) > compiler_flags.h)
