@@ -329,7 +329,7 @@ int main(int argc, char** argv) {
 
             printf("Number of devices = %d\n\n",omp_get_num_devices());
 
-            sim.endcond_max_simtime = 0.000002;
+            //sim.endcond_max_simtime = 0.000002;
             /* pragma omp target device(0) map( \  */
             #pragma omp target data map( \
                 offload_data, \
