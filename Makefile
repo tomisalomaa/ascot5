@@ -1,3 +1,5 @@
+# make ascot5_main MPI=0 VERBOSE=0 GPU=1 OMP=1 TARGET=1 to compile for thr GPU
+# see the README file for more details
 CC=gcc
 
 ifdef NSIMD
@@ -56,7 +58,7 @@ else
 endif
 
 # set here the level of optimization.  
-CFLAGS+= -g -lm -fPIC -std=c11 $(DEFINES) $(FLAGS) -DFULLMCCC
+CFLAGS+= -lm -fPIC -std=c11 $(DEFINES) $(FLAGS) -DFULLMCCC
 
 # Write CFLAGS and CC to a file to be included into output
 $(shell echo "#define CFLAGS " $(CFLAGS) > compiler_flags.h)

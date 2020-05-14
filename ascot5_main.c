@@ -329,9 +329,7 @@ int main(int argc, char** argv) {
 
             printf("Number of devices = %d\n\n",omp_get_num_devices());
 
-            //#ifdef PIPPO
             sim.endcond_max_simtime = 0.000002;
-            //#endif //PIPPO
             /* pragma omp target device(0) map( \  */
             #pragma omp target data map( \
                 offload_data, \
@@ -363,6 +361,7 @@ int main(int argc, char** argv) {
 
             mic0_end = A5_WTIME;
             //end of target data
+            printf("EXITING MAIN DATA REGION\n");
             }
         }
 #endif
@@ -400,6 +399,7 @@ int main(int argc, char** argv) {
 #endif
     }
 
+    printf("RETURNING TO HOST\n");
     /* Code execution returns to host. */
     print_out0(VERBOSE_NORMAL, mpi_rank, "mic0 %lf s, mic1 %lf s, host %lf s\n",
         mic0_end-mic0_start, mic1_end-mic1_start, host_end-host_start);
@@ -418,6 +418,7 @@ int main(int argc, char** argv) {
     print_out0(VERBOSE_NORMAL, mpi_rank,
                "Endstate written.\n");
 
+#ifdef SKIPSECTION
     /* Combine diagnostic data and write it to HDF5 file */
     print_out0(VERBOSE_MINIMAL, mpi_rank,
                    "\nCombining and writing diagnostics.\n");
@@ -444,6 +445,7 @@ int main(int argc, char** argv) {
     }
 
     /* Free offload data */
+#endif //SKIPSECTION
 
 #ifdef MPI
     MPI_Finalize();
@@ -458,6 +460,7 @@ int main(int argc, char** argv) {
 
     marker_summary(ps, n);
     free(ps);
+
 
     print_out0(VERBOSE_MINIMAL, mpi_rank, "\nDone.\n");
 

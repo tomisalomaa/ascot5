@@ -205,7 +205,11 @@ void simulate(int id, int n_particles,
 // end of first target region
 }
 
+#if NTEAMS == 0
+#pragma omp target teams is_device_ptr(sim, pq, pq_hybrid)
+#else
 #pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
+#endif
 {
     int ith = omp_get_num_threads();
     int tth = omp_get_num_teams();
@@ -252,6 +256,7 @@ void simulate(int id, int n_particles,
                 int tth = omp_get_num_teams();
                 printf("PARALLEL REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
                 simulate_fo_fixed(pq, sim);
+                printf("AFTER simulate_fo_fixed\n");
                 }
             }
             else if(pq->n > 0 && sim->sim_mode == simulate_mode_ml) {
@@ -262,9 +267,9 @@ void simulate(int id, int n_particles,
             }
         }
 
+
 #ifndef GPU
         #pragma omp section
-#endif
         {
 #if VERBOSE > 1
             /* Update progress until simulation is complete.             */
@@ -274,9 +279,13 @@ void simulate(int id, int n_particles,
             outfn[strlen(outfn)-3] = '\0';
             sprintf(filename, "%s.stdout", outfn);
             sim_monitor(filename, &pq.n, &pq.finished);
-#endif
         }
+#endif
+#endif
     }
+//end of second target region
+}
+        printf("BEFORE simulate_mode_hybrid\n");
 
     /**************************************************************************/
     /* 6. (If hybrid mode is active) Markers with hybrid end condition active */
@@ -286,9 +295,12 @@ void simulate(int id, int n_particles,
     /*    progress is monitored as previously.                                */
     /*                                                                        */
     /**************************************************************************/
+#pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
+{
     int n_new = 0;
     if(sim->sim_mode == simulate_mode_hybrid) {
 
+        printf("INSIDE simulate_mode_hybrid\n");
         /* Determine the number markers that should be run
          * in fo after previous gc simulation */
         for(int i = 0; i < pq->n; i++) {
@@ -309,8 +321,10 @@ void simulate(int id, int n_particles,
         }
 
     }
+        printf("AFTER simulate_mode_hybrid %d\n",n_new);
 
     if(n_new > 0) {
+        printf("BEFORE MEMCOPY\n");
         /* Reallocate and add "old" hybrid particles to the hybrid queue */
         particle_state** tmp = pq_hybrid->p;
         pq_hybrid->p = (particle_state**) malloc((pq_hybrid->n + n_new)
@@ -329,6 +343,10 @@ void simulate(int id, int n_particles,
         pq_hybrid->next = 0;
 
         sim->record_mode = 1;//Make sure we don't collect fos in gc diagnostics
+        printf("AFTER MEMCOPY\n");
+    }
+
+}  // End of target region
 
 #ifndef GPU
         #pragma omp parallel sections num_threads(2)
@@ -337,10 +355,30 @@ void simulate(int id, int n_particles,
 #ifndef GPU
             #pragma omp section
 #endif
+
+#if NTEAMS == 0
+#pragma omp target teams is_device_ptr(sim, pq, pq_hybrid)
+#else
+#pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
+#endif
+{
+    int ith = omp_get_num_threads();
+    int tth = omp_get_num_teams();
+
+    printf("TARGET REGION 4 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
             {
+                int ith = omp_get_num_threads();
+                int tth = omp_get_num_teams();
+
+                printf("PARALLEL REGION 5 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
                 #pragma omp parallel
                 simulate_fo_fixed(pq_hybrid, sim);
             }
+
+printf("EXIT PARALLEL REGION 5\n");
+
+#ifdef SKIPSECTION
+
 
 #ifndef GPU
             #pragma omp section
@@ -355,26 +393,32 @@ void simulate(int id, int n_particles,
                 sim_monitor(filename, &pq_hybrid->n, &pq_hybrid->finished);
 #endif
             }
-        }
-    }
+#endif // SKIPSECTION
+
+// end of target region
+}
 
     /**************************************************************************/
     /* 7. Simulation data is deallocated except for data that is mapped back  */
     /*    to host.                                                            */
     /*                                                                        */
     /**************************************************************************/
+#pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
+{
     free(pq->p);
     free(pq_hybrid->p);
     diag_free(&sim->diag_data);
-
-//end of second target region
 }
+
+        }
+
 
     /**************************************************************************/
     /* 8. Execution returns to host where this function was called.           */
     /*                                                                        */
     /**************************************************************************/
     //print_out(VERBOSE_NORMAL, "%s: Simulation complete.\n", targetname);
+
 
 }
 
@@ -433,18 +477,6 @@ void sim_init(sim_data* sim, sim_offload_data* offload_data) {
     sim->endcond_min_thermal  = offload_data->endcond_min_thermal;
     sim->endcond_max_tororb   = offload_data->endcond_max_tororb;
     sim->endcond_max_polorb   = offload_data->endcond_max_polorb;
-
-#ifdef PIPPO
-    printf("%d\n",offload_data->endcond_active);
-    printf("%d\n",offload_data->endcond_max_simtime);  
-    printf("%d\n",offload_data->endcond_max_cputime);  
-    printf("%d\n",offload_data->endcond_min_rho);      
-    printf("%d\n",offload_data->endcond_max_rho);     
-    printf("%d\n",offload_data->endcond_min_ekin);     
-    printf("%d\n",offload_data->endcond_min_thermal);  
-    printf("%d\n",offload_data->endcond_max_tororb);   
-    printf("%d\n",offload_data->endcond_max_polorb);   
-#endif
 
     mccc_init(&sim->mccc_data, !sim->disable_energyccoll,
               !sim->disable_pitchccoll, !sim->disable_gcdiffccoll);

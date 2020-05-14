@@ -3,12 +3,12 @@ GPU enabled version of Ascot5 - Work in Progress
 === COMPILE
 
 Warning: for some reasons the function mccc_coefs_mufun does not compile for the GPU if some optimization is active. 
-In order to enable the full function define -DFULLMCCC (see the Makefile)
+In order to enable the full function define -DFULLMCCC (see the Makefile). Otherwise a simplified version is used. 
 
 All SIMD specific directives have been disabled. It is not clear their behaviour on the GPU. 
 In order to enable them define -DSIMD (see the Makefile)
 
-In order to compile on the GPU:
+In order to compile for the GPU:
 1) modify the Makefile according to the indications writen in the file
 2) make ascot5_main MPI=0 VERBOSE=0 GPU=1 OMP=1 TARGET=1
 
@@ -35,5 +35,20 @@ srun --gres=gpu:1 ./ascot5_main --in=helloworld
 === THREADING
 
 Set the number of teams and threads per team defining at the beginning of simulate.c
-#define NTEAMS 1
-#define NTHREADS 1
+#define NTEAMS N
+#define NTHREADS M
+In the git file N=M=1. 
+In order to run with the system defaults set NTEAMS=0
+
+=== SKIPPED SECTIONS
+
+There are a few parts of the code (in particular those related with I/O that will not run on the GPU)
+that for simplicity have been excluded from compilation.
+They are enclosed in:
+#ifdef SKIPSECTION
+section
+#endif // SKIPSECTION
+
+=== WARNINGS
+
+Do not activate any optimization (like -O1, -O2 or -O3) since the code crashes
