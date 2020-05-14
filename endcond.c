@@ -94,6 +94,7 @@ void endcond_check_fo(particle_simd_fo* p_f, particle_simd_fo* p_i,
                     p_f->running[i] = 0;
                 }
             }
+   
 
             /* Check, using the wall collision module, whether marker hit wall
              * during this time-step. Store the wall element ID if it did. */
@@ -146,12 +147,15 @@ void endcond_check_fo(particle_simd_fo* p_f, particle_simd_fo* p_i,
                     p_f->running[i] = 0;
                 }
             }
+            //printf(">>>>>>>>>>>>> 6 ->running %d\n",p_f->running[i]);
             if(active_rhomin) {
                 if(p_f->rho[i] < sim->endcond_min_rho) {
                     p_f->endcond[i] |= endcond_rhomin;
                     p_f->running[i] = 0;
                 }
             }
+            //printf("p_f->rho[i] %f %f\n",p_f->rho[i],sim->endcond_min_rho);
+            //printf(">>>>>>>>>>>>> 7 ->running %d\n",p_f->running[i]);
 
             /* Check if marker exceeds toroidal or poloidal limits */
             if(active_tormax) {

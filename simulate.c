@@ -28,6 +28,8 @@
 #include "simulate/mccc/mccc.h"
 #include "gctransform.h"
 
+#define NTEAMS 1
+#define NTHREADS 1
 
 #pragma omp declare target
 void sim_init(sim_data* sim, sim_offload_data* offload_data);
@@ -104,10 +106,10 @@ void simulate(int id, int n_particles,
 
 #pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
 {
-    //int ith = omp_get_num_threads();
-    //int tth = omp_get_num_teams();
+    int ith = omp_get_num_threads();
+    int tth = omp_get_num_teams();
 
-    //printf("TARGET REGION 1 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+    printf("TARGET REGION 1 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 
     char targetname[5];
     if(id == 0) {
@@ -203,7 +205,7 @@ void simulate(int id, int n_particles,
 // end of first target region
 }
 
-#pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
+#pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
 {
     int ith = omp_get_num_threads();
     int tth = omp_get_num_teams();
@@ -228,7 +230,6 @@ void simulate(int id, int n_particles,
             /*    user has chosen.                                            */
             /*                                                                */
             /******************************************************************/
-//CLAA
             if(pq->n > 0 && (sim->sim_mode == simulate_mode_gc
                         || sim->sim_mode == simulate_mode_hybrid)) {
                 if(sim->enable_ada) {
@@ -432,6 +433,18 @@ void sim_init(sim_data* sim, sim_offload_data* offload_data) {
     sim->endcond_min_thermal  = offload_data->endcond_min_thermal;
     sim->endcond_max_tororb   = offload_data->endcond_max_tororb;
     sim->endcond_max_polorb   = offload_data->endcond_max_polorb;
+
+#ifdef PIPPO
+    printf("%d\n",offload_data->endcond_active);
+    printf("%d\n",offload_data->endcond_max_simtime);  
+    printf("%d\n",offload_data->endcond_max_cputime);  
+    printf("%d\n",offload_data->endcond_min_rho);      
+    printf("%d\n",offload_data->endcond_max_rho);     
+    printf("%d\n",offload_data->endcond_min_ekin);     
+    printf("%d\n",offload_data->endcond_min_thermal);  
+    printf("%d\n",offload_data->endcond_max_tororb);   
+    printf("%d\n",offload_data->endcond_max_polorb);   
+#endif
 
     mccc_init(&sim->mccc_data, !sim->disable_energyccoll,
               !sim->disable_pitchccoll, !sim->disable_gcdiffccoll);

@@ -535,7 +535,6 @@ a5err B_field_eval_B_dB(real B_dB[15], real r, real phi, real z, real t,
                         B_field_data* Bdata) {
     a5err err = 0;
 
-//CLAAAAAAAAA
     switch(Bdata->type) {
         case B_field_type_GS:
             err = B_GS_eval_B_dB(B_dB, r, phi, z, &(Bdata->BGS));

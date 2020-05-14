@@ -1,0 +1,39 @@
+GPU enabled version of Ascot5 - Work in Progress
+
+=== COMPILE
+
+Warning: for some reasons the function mccc_coefs_mufun does not compile for the GPU if some optimization is active. 
+In order to enable the full function define -DFULLMCCC (see the Makefile)
+
+All SIMD specific directives have been disabled. It is not clear their behaviour on the GPU. 
+In order to enable them define -DSIMD (see the Makefile)
+
+In order to compile on the GPU:
+1) modify the Makefile according to the indications writen in the file
+2) make ascot5_main MPI=0 VERBOSE=0 GPU=1 OMP=1 TARGET=1
+
+In order to compile for the CPU (with or without SIMD)
+1) modify the Makefile according to the indications writen in the file
+2) make ascot5_main MPI=0 VERBOSE=0 GPU=0 OMP=1 TARGET=1
+
+=== RUN
+
+Specific setup for Triton
+
+module load cuda
+module load openmpi
+module load gcc/9.2.0-cuda-nvptx
+module load hdf5
+
+In order to run OpenMP on the CPU:
+export OMP_NUM_THREADS=N
+srun -n 1 --cpus-per-task=N ./ascot5_main --in=helloworld
+
+In order to run OpenMP on the GPU:
+srun --gres=gpu:1 ./ascot5_main --in=helloworld
+
+=== THREADING
+
+Set the number of teams and threads per team defining at the beginning of simulate.c
+#define NTEAMS 1
+#define NTHREADS 1

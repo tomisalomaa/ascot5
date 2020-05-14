@@ -232,7 +232,8 @@ int particle_cycle_fo(particle_queue* q, particle_simd_fo* p,
         while(newmarker) {
             /* Get the next unsimulated marker from the queue */
             int i_prt;
-            #pragma omp critical
+            //#pragma omp critical
+            #pragma omp atomic capture
             i_prt = q->next++;
 
             if(i_prt >= q->n) {
@@ -330,8 +331,8 @@ int particle_cycle_gc(particle_queue* q, particle_simd_gc* p,
         while(newmarker) {
             /* Get the next unsimulated marker from the queue */
             int i_prt;
-            // CLAAAAAAAAAA
-            #pragma omp critical
+            //#pragma omp critical
+            #pragma omp atomic capture
             i_prt = q->next++; 
 
             if(i_prt >= q->n) {
@@ -429,7 +430,8 @@ int particle_cycle_ml(particle_queue* q, particle_simd_ml* p,
         while(newmarker) {
             /* Get the next unsimulated marker from the queue */
             int i_prt;
-            #pragma omp critical
+            //#pragma omp critical
+            #pragma omp atomic capture
             i_prt = q->next++;
 
             if(i_prt >= q->n) {

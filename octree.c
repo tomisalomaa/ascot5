@@ -46,43 +46,28 @@
  */
 void octree_create(octree_node** node, real x_min, real x_max, real y_min,
                    real y_max, real z_min, real z_max, int depth) {
-    printf("depth = %d\n",depth);
     octree_node* n = (octree_node*) malloc(sizeof(octree_node));
     (*node) = n;
     real epsilon = 1e-6;
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 0.1\n");
     n->bb1[0] = x_min - epsilon;
     n->bb2[0] = x_max + epsilon;
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 0.2\n");
     n->bb1[1] = y_min - epsilon;
     n->bb2[1] = y_max + epsilon;
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 0.3\n");
     n->bb1[2] = z_min - epsilon;
     n->bb2[2] = z_max + epsilon;
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 0.4\n");
     real x = (x_max + x_min) / 2;
     real y = (y_max + y_min) / 2;
     real z = (z_max + z_min) / 2;
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 0.5\n");
     //depth=2;
     if(depth > 1) {
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 1 %d\n",&(n->n000));
         octree_create(&(n->n000), x_min, x, y_min, y, z_min, z, depth-1);
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 2.1\n");
         octree_create(&(n->n100), x, x_max, y_min, y, z_min, z, depth-1);
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 2.2\n");
         octree_create(&(n->n010), x_min, x, y, y_max, z_min, z, depth-1);
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 2.3\n");
         octree_create(&(n->n110), x, x_max, y, y_max, z_min, z, depth-1);
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 2.4\n");
         octree_create(&(n->n001), x_min, x, y_min, y, z, z_max, depth-1);
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 2.5\n");
         octree_create(&(n->n101), x, x_max, y_min, y, z, z_max, depth-1);
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 2.6\n");
         octree_create(&(n->n011), x_min, x, y, y_max, z, z_max, depth-1);
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 2.7\n");
         octree_create(&(n->n111), x, x_max, y, y_max, z, z_max, depth-1);
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 2.8\n");
         n->list = NULL;
     }
     else {
@@ -95,7 +80,6 @@ void octree_create(octree_node** node, real x_min, real x_max, real y_min,
         n->n011 = NULL;
         n->n111 = NULL;
         list_int_create(&(n->list));
-    printf("eeeeeeeeeeeeeeeeeeeeeeee 3\n");
     }
 }
 

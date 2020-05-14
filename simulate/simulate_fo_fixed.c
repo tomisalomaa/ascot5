@@ -56,10 +56,13 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
 
     real cputime, cputime_last; // Global cpu time: recent and previous record
 
+    int team_num = omp_get_team_num();
+    int thread_num = omp_get_thread_num();
+
     particle_simd_fo p;  // This array holds current states
     particle_simd_fo p0; // This array stores previous states
 
-    printf("=================== PASSED FO_FIXED 1 =====================\n");
+    //////////printf("=================== PASSED FO_FIXED 1 =====================\n");
 
 
     /* Init dummy markers */
@@ -69,9 +72,9 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
     }
 
     /* Initialize running particles */
-    printf("=================== PASSED FO_FIXED 2 ===================== %d\n",p.id[0]);
+    ///////////printf("=================== PASSED FO_FIXED 2 ===================== %d\n",p.id[0]);
     int n_running = particle_cycle_fo(pq, &p, &sim->B_data, cycle);
-    printf("=================== PASSED FO_FIXED 2.1 ===================== %d\n",p.id[0]);
+    ///////////printf("=================== PASSED FO_FIXED 2.1 ===================== %d\n",p.id[0]);
 
     /* Determine simulation time-step */
 #ifdef SIMD
@@ -84,7 +87,7 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
         }
     }
 
-    printf("=================== PASSED FO_FIXED 3 ===================== %d\n",p.id[0]);
+    ///////////printf("=================== PASSED FO_FIXED 3 ===================== %d\n",p.id[0]);
 
     cputime_last = A5_WTIME;
 
@@ -96,11 +99,10 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
      * - Check for end condition(s)
      * - Update diagnostics
      */
-    //CLAA
     int ncount = 0;
     nnnn=0;
     while(n_running > 0) {
-        printf ("=================== N_RUNNING = %d, GPU, %d, %d, %d\n",n_running,nnnn,p.id[0],p.endcond[0]);
+        //printf ("=================== N_RUNNING = %d, GPU, %d, %d, %d, %d N\n",n_running,nnnn,team_num,thread_num,p.id[0]);
         nnnn++;
         /* Store marker states */
 #ifdef SIMD
@@ -110,7 +112,7 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
             particle_copy_fo(&p, i, &p0, i);
         }
 
-    //printf("=================== PASSED FO_FIXED 4 ===================== %d\n",p.id[0]);
+    //printf("=================== PASSED FO_FIXED 4 ===================== %f\n",p.rho[0]);
         /*************************** Physics **********************************/
 
         /* Volume preserving algorithm for orbit-following */
@@ -118,13 +120,13 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
             step_fo_vpa(&p, hin, &sim->B_data, &sim->E_data);
         }
 
-    //printf("=================== PASSED FO_FIXED 5 =====================\n");
+    //printf("=================== PASSED FO_FIXED 5 ===================== %f\n",p.rho[0]);
         /* Euler-Maruyama for Coulomb collisions */
         if(sim->enable_clmbcol) {
             mccc_fo_euler(&p, hin, &sim->B_data, &sim->plasma_data,
                           &sim->random_data, &sim->mccc_data);
         }
-    //printf("=================== PASSED FO_FIXED 6 =====================\n");
+    //printf("=================== PASSED FO_FIXED 6 ===================== %f\n",p.rho[0]);
 
         /**********************************************************************/
 
@@ -141,11 +143,11 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
             }
         }
         cputime_last = cputime;
-    //printf("=================== PASSED FO_FIXED 7 =====================\n");
+    //printf("=================== PASSED FO_FIXED 7 ===================== %f\n",p.rho[0]);
 
         /* Check possible end conditions */
         endcond_check_fo(&p, &p0, sim);
-    //printf("=================== PASSED FO_FIXED 8 =====================\n");
+    //printf("=================== PASSED FO_FIXED 8 ===================== %f\n",p.rho[0]);
 
         /* Update diagnostics */
         if(!(sim->record_mode)) {
@@ -178,7 +180,7 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
             }
             diag_update_gc(&sim->diag_data, &gc_f, &gc_i);
         }
-    //printf("=================== PASSED FO_FIXED 9 =====================\n");
+    //printf("=================== PASSED FO_FIXED 9 ===================== %f\n",p.rho[0]);
 
         /* Update running particles */
         n_running = particle_cycle_fo(pq, &p, &sim->B_data, cycle);
@@ -193,11 +195,6 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
                 hin[i] = simulate_fo_fixed_inidt(sim, &p, i);
             }
         }
-#ifdef CLAA
-    int nnn = NSIMD;
-    ncount = ncount+1;
-    //printf("\n nsimd, n_running : %d %d %d\n\n",nnn,n_running,ncount);
-#endif
     //printf("=================== PASSED FO_FIXED 11 =====================\n");
     // end of while
     }

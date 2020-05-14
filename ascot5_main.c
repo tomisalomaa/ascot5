@@ -205,6 +205,7 @@ int main(int argc, char** argv) {
     wall_free_offload(&sim.wall_offload_data, &wall_offload_array);
 
 
+
     /* Initialize diagnostics offload data.
      * Separate arrays for host and target */
 #ifdef TARGET
@@ -326,10 +327,11 @@ int main(int argc, char** argv) {
         {
             mic0_start = A5_WTIME;
 
-    printf("Number of devices = %d\n\n",omp_get_num_devices());
+            printf("Number of devices = %d\n\n",omp_get_num_devices());
 
- 
-
+            //#ifdef PIPPO
+            sim.endcond_max_simtime = 0.000002;
+            //#endif //PIPPO
             /* pragma omp target device(0) map( \  */
             #pragma omp target data map( \
                 offload_data, \
