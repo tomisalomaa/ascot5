@@ -278,7 +278,7 @@ void simulate(int id, int n_particles,
             strcpy(outfn, sim_offload->hdf5_out);
             outfn[strlen(outfn)-3] = '\0';
             sprintf(filename, "%s.stdout", outfn);
-            sim_monitor(filename, &pq.n, &pq.finished);
+            sim_monitor(filename, pq->n, pq->finished);
         }
 #endif
 #endif
