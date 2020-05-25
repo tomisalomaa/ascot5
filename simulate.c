@@ -106,8 +106,14 @@ void simulate(int id, int n_particles,
 
 #pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
 {
-    int ith = omp_get_num_threads();
+
+#ifdef _OPENMP
+	int ith = omp_get_num_threads();
     int tth = omp_get_num_teams();
+#else
+    int ith = 1;
+    int tth = 1;
+#endif
 
     printf("TARGET REGION 1 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 
@@ -211,8 +217,13 @@ void simulate(int id, int n_particles,
 #pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
 #endif
 {
+#ifdef _OPENMP
     int ith = omp_get_num_threads();
     int tth = omp_get_num_teams();
+#else
+    int ith = 1;
+    int tth =1;
+#endif
 
     printf("TARGET REGION 2 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
  
@@ -252,8 +263,13 @@ void simulate(int id, int n_particles,
                 printf("Calling simulate_fo_fixed\n");
                 #pragma omp parallel
                 {
+#ifdef _OPENMP
                 int ith = omp_get_num_threads();
                 int tth = omp_get_num_teams();
+#else
+                int ith = 1;
+                int tth =1;
+#endif
                 printf("PARALLEL REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
                 simulate_fo_fixed(pq, sim);
                 printf("AFTER simulate_fo_fixed\n");
@@ -362,14 +378,23 @@ void simulate(int id, int n_particles,
 #pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
 #endif
 {
+#ifdef _OPENMP
     int ith = omp_get_num_threads();
     int tth = omp_get_num_teams();
+#else
+    int ith = 1;
+    int tth =1;
+#endif
 
     printf("TARGET REGION 4 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
             {
-                int ith = omp_get_num_threads();
-                int tth = omp_get_num_teams();
-
+#ifdef _OPENMP
+    			int ith = omp_get_num_threads();
+    			int tth = omp_get_num_teams();
+#else
+    			int ith = 1;
+    			int tth =1;
+#endif
                 printf("PARALLEL REGION 5 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
                 #pragma omp parallel
                 simulate_fo_fixed(pq_hybrid, sim);
@@ -377,7 +402,7 @@ void simulate(int id, int n_particles,
 
 printf("EXIT PARALLEL REGION 5\n");
 
-#ifdef SKIPSECTION
+#ifdef SKIPSECTION_SIM
 
 
 #ifndef GPU
@@ -393,7 +418,7 @@ printf("EXIT PARALLEL REGION 5\n");
                 sim_monitor(filename, &pq_hybrid->n, &pq_hybrid->finished);
 #endif
             }
-#endif // SKIPSECTION
+#endif // SKIPSECTION_SIM
 
 // end of target region
 }

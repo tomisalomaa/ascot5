@@ -55,9 +55,14 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
     int nnnn;
 
     real cputime, cputime_last; // Global cpu time: recent and previous record
-
-    int team_num = omp_get_team_num();
+#ifdef _OPENMP
     int thread_num = omp_get_thread_num();
+    int team_num = omp_get_team_num();
+#else
+    int thread_num = 1;
+    int team_num =1;
+#endif
+
 
     particle_simd_fo p;  // This array holds current states
     particle_simd_fo p0; // This array stores previous states
