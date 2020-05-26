@@ -402,7 +402,7 @@ void simulate(int id, int n_particles,
 
 printf("EXIT PARALLEL REGION 5\n");
 
-#ifdef SKIPSECTION_SIM
+#ifdef SKIPSECTION
 
 
 #ifndef GPU
@@ -418,7 +418,7 @@ printf("EXIT PARALLEL REGION 5\n");
                 sim_monitor(filename, &pq_hybrid->n, &pq_hybrid->finished);
 #endif
             }
-#endif // SKIPSECTION_SIM
+#endif // SKIPSECTION
 
 // end of target region
 }
