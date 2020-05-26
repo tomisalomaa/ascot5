@@ -295,8 +295,8 @@ void simulate(int id, int n_particles,
             outfn[strlen(outfn)-3] = '\0';
             sprintf(filename, "%s.stdout", outfn);
             sim_monitor(filename, pq->n, pq->finished);
-        }
 #endif
+        }
 #endif
     }
 //end of second target region
