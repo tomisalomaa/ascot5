@@ -212,8 +212,12 @@ int main(int argc, char** argv) {
     int iiiii = TARGET;
     real* diag_offload_array_mic0;
     real* diag_offload_array_mic1;
-    diag_init_offload(&sim.diag_offload_data, &diag_offload_array_mic0, n);
-    diag_init_offload(&sim.diag_offload_data, &diag_offload_array_mic1, n);
+    if ( diag_init_offload(&sim.diag_offload_data, &diag_offload_array_mic0, n) ){
+      printf("Could not allocate diag_offload_array_mic0\n");
+    }
+    if ( diag_init_offload(&sim.diag_offload_data, &diag_offload_array_mic1, n) ){
+      printf("Could not allocate diag_offload_array_mic1\n");
+    }
 #else
     real* diag_offload_array_host;
     diag_init_offload(&sim.diag_offload_data, &diag_offload_array_host, n);
@@ -453,7 +457,8 @@ int main(int argc, char** argv) {
 
 #ifdef TARGET
     diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic0);
-    diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic1);
+    // Commenting out the following line will stop the code from crashing, but this only hides the underlying problem.
+    //  diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic1);
 #else
     diag_free_offload(&sim.diag_offload_data, &diag_offload_array_host);
 #endif
