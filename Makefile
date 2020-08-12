@@ -42,13 +42,18 @@ ifeq ($(OMP),1)
 # uncomment this to compile for CPU only with SIMD
         #CFLAGS+=-fopenmp -DSIMD -foffload=disable
 # uncomment this to compile for GPU 
-        CFLAGS+=-fopenmp 
+        #CFLAGS+=-fopenmp 
+ifeq ($(OMP)$(TARGET), 11)
+	CFLAGS+=-fopenmp
+else
+	CFLAGS+=-fopenmp -DSIMD -foffload=disable
+endif
 endif
 
 ifeq ($(GPU),1)
         DEFINES+=-DGPU
-        #CFLAGS+=-foffload="-lm -g" -fno-stack-protector
-        CFLAGS+=-foffload="-lm"
+        CFLAGS+=-foffload="-O0 -lm -g" -fno-stack-protector
+        #CFLAGS+=-foffload="-lm"
 endif
 
 ifdef VERBOSE
@@ -58,7 +63,9 @@ else
 endif
 
 # set here the level of optimization.  
-CFLAGS+= -lm -fPIC -std=c11 $(DEFINES) $(FLAGS) -DFULLMCCC
+CFLAGS+= -lm -fPIC -std=c11 $(DEFINES) $(FLAGS) #-DFULLMCCC
+#CFLAGS+= -Ofast -g -march=skylake-avx512
+CFLAGS+= -O0 -g -march=native
 
 # Write CFLAGS and CC to a file to be included into output
 $(shell echo "#define CFLAGS " $(CFLAGS) > compiler_flags.h)

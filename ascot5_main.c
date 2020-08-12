@@ -208,16 +208,20 @@ int main(int argc, char** argv) {
 
     /* Initialize diagnostics offload data.
      * Separate arrays for host and target */
-#ifdef TARGET
-    int iiiii = TARGET;
-    real* diag_offload_array_mic0;
-    real* diag_offload_array_mic1;
-    diag_init_offload(&sim.diag_offload_data, &diag_offload_array_mic0, n);
-    diag_init_offload(&sim.diag_offload_data, &diag_offload_array_mic1, n);
-#else
+//#ifdef GPU
+//#warning "GPU defined"
+//   real* diag_offload_array_mic0;
+//    real* diag_offload_array_mic1;
+//    if ( diag_init_offload(&sim.diag_offload_data, &diag_offload_array_mic0, n) ){
+//      printf("Could not allocate diag_offload_array_mic0\n");
+//    }
+//    if ( diag_init_offload(&sim.diag_offload_data, &diag_offload_array_mic1, n) ){
+//     printf("Could not allocate diag_offload_array_mic1\n");
+//    }
+//#else
     real* diag_offload_array_host;
     diag_init_offload(&sim.diag_offload_data, &diag_offload_array_host, n);
-#endif
+//#endif
 
     real diag_offload_array_size = sim.diag_offload_data.offload_array_length
         * sizeof(real) / (1024.0*1024.0);
@@ -240,12 +244,10 @@ int main(int argc, char** argv) {
     int start_index = mpi_rank * (n / mpi_size);
     p += start_index;
 
-    if(mpi_rank == mpi_size-1) {
-        n = n - mpi_rank * (n / mpi_size);
-    }
-    else {
-        n = n / mpi_size;
-    }
+
+    if(mpi_rank == mpi_size-1) { n = n - mpi_rank * (n / mpi_size); }
+    else { n = n / mpi_size; }
+    printf("@@ n local particles = %d\n", n);
 
     /* Set up particlestates on host, needs magnetic field evaluation */
     print_out0(VERBOSE_NORMAL, mpi_rank,
@@ -255,6 +257,7 @@ int main(int argc, char** argv) {
     particle_state* ps = (particle_state*) malloc(n * sizeof(particle_state));
     for(int i = 0; i < n; i++) {
         particle_input_to_state(&p[i], &ps[i], &Bdata);
+	//particle_print(&ps[i]);
     }
     /* We can now free the Bfield offload array */
     B_field_free_offload(&sim.B_offload_data, &B_offload_array);
@@ -290,13 +293,15 @@ int main(int argc, char** argv) {
                "\nInistate written.\n");
 
     /* Divide markers among host and target */
-#ifdef TARGET
-    int n_mic = n / TARGET;
-    int n_host = 0;
-#else
+//#ifdef GPU
+//    //int n_mic = n;
+//    //int n_host = 0;
     int n_mic = 0;
     int n_host = n;
-#endif
+//#else
+//    int n_mic = 0;
+//    int n_host = n;
+//#endif
 
     double mic0_start = 0, mic0_end=0,
         mic1_start=0, mic1_end=0,
@@ -308,96 +313,36 @@ int main(int argc, char** argv) {
 #ifdef _OPENMP
     omp_set_nested(1);
 #endif
+	//sim.endcond_max_simtime = 0.00001;
+sim.endcond_max_simtime = 0.000002;
+printf("max time = %f, n = %d, n_host = %d, n_mic = %d\n", sim.endcond_max_simtime, n, n_host, n_mic);
 
-    /* Actual marker simulation happens here. Threads are spawned which
-     * distribute the execution between target(s) and host. Both input and
-     * diagnostic offload arrays are mapped to target. Simulation is initialized
-     * at the target and completed within the simulate() function.*/
-#ifndef GPU
-    #pragma omp parallel sections num_threads(3)
-#else
-    #pragma omp parallel sections num_threads(1)
-#endif
-    {
-        /* Run simulation on first target */
-#if TARGET >= 1
-#ifndef GPU
-        #pragma omp section
-#endif
-        {
-            mic0_start = A5_WTIME;
-
-            printf("Number of devices = %d\n\n",omp_get_num_devices());
-
-            //sim.endcond_max_simtime = 0.000002;
-            /* pragma omp target device(0) map( \  */
-            #pragma omp target data map( \
-                offload_data, \
-                ps[0:n_mic], \
+/* Actual marker simulation happens here. Threads are spawned which
+ * distribute the execution between target(s) and host. Both input and
+ * diagnostic offload arrays are mapped to target. Simulation is initialized
+ * at the target and completed within the simulate() function.*/
+/* No target, marker simulation happens where the code execution began.
+ * Offloading is only emulated. */
+printf("@@ ps = %p\n", ps);
+#ifdef GPU
+#pragma omp target data map( \
+		offload_data, \
+                ps[0:n], \
                 offload_array[0:offload_data.offload_array_length], \
-                diag_offload_array_mic0[0:sim.diag_offload_data.offload_array_length], \
-                sim \
-            )
-            {
-           // sim_data *sim_s;
-           // particle_queue *pq;
-           // particle_queue *pq_hybrid;
-           // #ifdef GPU
-           // sim_s = (sim_data*) omp_target_alloc(sizeof(sim_data),omp_get_default_device());
-           // pq = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
-           // pq_hybrid = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
-           // #else
-           // sim_s = (sim_data*) malloc(sizeof(sim_data));
-           // pq = (particle_queue*) malloc(sizeof(particle_queue));
-           // pq_hybrid = (particle_queue*) malloc(sizeof(particle_queue));
-           // #endif
-            
-            //#pragma omp target teams num_teams(64) thread_limit(32) is_device_ptr(sim_s, pq, pq_hybrid)
-            {
-            simulate(1, n_mic, ps, &sim, &offload_data, offload_array,
-                diag_offload_array_mic0);
-            // end of target
-            }
-
-            mic0_end = A5_WTIME;
-            //end of target data
-            printf("EXITING MAIN DATA REGION\n");
-            }
-        }
+                diag_offload_array_host[0:sim.diag_offload_data.offload_array_length], \
+                sim )
 #endif
-
-        /* Run simulation on second target */
-#ifndef GPU
-#if TARGET >= 2
-        #pragma omp section
-        {
-            mic1_start = A5_WTIME;
-
-            #pragma omp target device(1) map( \
-                ps[n_mic:2*n_mic], \
-                offload_array[0:offload_data.offload_array_length], \
-                diag_offload_array_mic1[0:sim.diag_offload_data.offload_array_length] \
-            )
-            simulate(2, n_mic, ps+n_mic, &sim, &offload_data, offload_array,
-                diag_offload_array_mic1);
-
-            mic1_end = A5_WTIME;
-        }
-#endif
-#endif
-
-        /* No target, marker simulation happens where the code execution began.
-         * Offloading is only emulated. */
-#ifndef TARGET
-        #pragma omp section
         {
             host_start = A5_WTIME;
-            simulate(0, n_host, ps+2*n_mic, &sim, &offload_data,
-                offload_array, diag_offload_array_host);
+            simulate(0, n_host, ps, &sim, &offload_data, offload_array,
+//#ifdef GPU
+//                diag_offload_array_mic0);
+//#else
+                diag_offload_array_host);
+//#endif
             host_end = A5_WTIME;
         }
-#endif
-    }
+//#endif
 
     printf("RETURNING TO HOST\n");
     /* Code execution returns to host. */
@@ -423,15 +368,15 @@ int main(int argc, char** argv) {
     print_out0(VERBOSE_MINIMAL, mpi_rank,
                    "\nCombining and writing diagnostics.\n");
     int err_writediag = 0;
-#ifdef TARGET
-    diag_sum(&sim.diag_offload_data,
-             diag_offload_array_mic0, diag_offload_array_mic1);
-    err_writediag = hdf5_interface_write_diagnostics(
-        &sim, diag_offload_array_mic0, sim.hdf5_out);
-#else
+//#ifdef GPU
+//    //diag_sum(&sim.diag_offload_data,
+//    //         diag_offload_array_mic0, diag_offload_array_mic1);
+//    err_writediag = hdf5_interface_write_diagnostics(
+//       &sim, diag_offload_array_mic0, sim.hdf5_out);
+//#else
     err_writediag = hdf5_interface_write_diagnostics(
         &sim, diag_offload_array_host, sim.hdf5_out);
-#endif
+//#endif
     if(err_writediag) {
         print_out0(VERBOSE_MINIMAL, mpi_rank,
                    "\nWriting diagnostics failed.\n"
@@ -451,12 +396,13 @@ int main(int argc, char** argv) {
     MPI_Finalize();
 #endif
 
-#ifdef TARGET
-    diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic0);
-    diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic1);
-#else
+//#ifdef GPU
+//    diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic0);
+//    // Commenting out the following line will stop the code from crashing, but this only hides the underlying problem.
+//    //  diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic1);
+//#else
     diag_free_offload(&sim.diag_offload_data, &diag_offload_array_host);
-#endif
+//#endif
 
     marker_summary(ps, n);
     free(ps);
@@ -474,12 +420,12 @@ CLEANUP_FAILURE:
     MPI_Finalize();
 #endif
 
-#ifdef TARGET
-    diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic0);
-    diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic1);
-#else
+//#ifdef GPU
+//   diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic0);
+//    diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic1);
+//#else
     diag_free_offload(&sim.diag_offload_data, &diag_offload_array_host);
-#endif
+//#endif
 
     offload_free_offload(&offload_data, &offload_array);
 
@@ -659,6 +605,7 @@ void marker_summary(particle_state* ps, int n) {
      * those with "and". */
     int i = 0;
     while(count[i] > 0) {
+	    //@@printf("count %i = %d\n", i, count[i]);
         // Initialize
         int endconds[32];
         for(int j=0; j<32;j++) {
@@ -682,7 +629,8 @@ void marker_summary(particle_state* ps, int n) {
         if(j == 0) {
             sprintf(endcondstr, "Aborted");
         }
-        print_out(VERBOSE_MINIMAL, "%9d markers had end condition %s\n",
+        //print_out(VERBOSE_MINIMAL, "%9d markers had end condition %s\n",
+        printf("%9d markers had end condition %s\n",
                   count[i], endcondstr);
         i++;
     }
@@ -704,7 +652,7 @@ void marker_summary(particle_state* ps, int n) {
             i++;
             continue;
         }
-        char msg[256];
+        char msg [256];
         char line[256];
         char file[256];
         error_parse2str(unique[i], msg, line, file);

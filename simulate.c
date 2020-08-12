@@ -82,294 +82,294 @@ void sim_monitor(char* filename, volatile int* n, volatile int* finished);
  * @todo Reorganize this function so that it conforms to documentation.
  */
 void simulate(int id, int n_particles, 
-        particle_state* p,
-        sim_offload_data* sim_offload,
-        offload_package* offload_data,
-        real* offload_array,
-        real* diag_offload_array) {
+		particle_state* p,
+		sim_offload_data* sim_offload,
+		offload_package* offload_data,
+		real* offload_array,
+		real* diag_offload_array) {
 
-//define pointers to main structures
+	//define pointers to main structures
 
-    sim_data *sim;
-    particle_queue *pq;
-    particle_queue *pq_hybrid;
-    #ifdef GPU
-    sim = (sim_data*) omp_target_alloc(sizeof(sim_data),omp_get_default_device());
-    pq = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
-    pq_hybrid = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
-    #else
-    sim = (sim_data*) malloc(sizeof(sim_data));
-    pq = (particle_queue*) malloc(sizeof(particle_queue));
-    pq_hybrid = (particle_queue*) malloc(sizeof(particle_queue));
-    #endif
+	sim_data *sim;
+	particle_queue *pq;
+	particle_queue *pq_hybrid;
+#ifdef GPU
+	sim = (sim_data*) omp_target_alloc(sizeof(sim_data),omp_get_default_device());
+	pq = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
+	pq_hybrid = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
+#else
+	sim = (sim_data*) malloc(sizeof(sim_data));
+	pq = (particle_queue*) malloc(sizeof(particle_queue));
+	pq_hybrid = (particle_queue*) malloc(sizeof(particle_queue));
+#endif
 
 
 #pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
-{
+	{
 
 #ifdef _OPENMP
-	int ith = omp_get_num_threads();
-    int tth = omp_get_num_teams();
+		int ith = omp_get_num_threads();
+		int tth = omp_get_num_teams();
 #else
-    int ith = 1;
-    int tth = 1;
+		int ith = 1;
+		int tth = 1;
 #endif
 
-    printf("TARGET REGION 1 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+		printf("TARGET REGION 1 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 
-    char targetname[5];
-    if(id == 0) {
-        sprintf(targetname, "host");
-    }
-    else {
-        sprintf(targetname, "mic%d", id-1);
-    }
+		char targetname[5];
+		if(id == 0) {
+			sprintf(targetname, "host");
+		}
+		else {
+			sprintf(targetname, "mic%d", id-1);
+		}
 
 
-    /**************************************************************************/
-    /* 1. Input offload data is unpacked and initialized by calling           */
-    /*    respective init functions.                                          */
-    /*                                                                        */
-    /**************************************************************************/
+		/**************************************************************************/
+		/* 1. Input offload data is unpacked and initialized by calling           */
+		/*    respective init functions.                                          */
+		/*                                                                        */
+		/**************************************************************************/
 
-    sim_init(sim, sim_offload);
+		sim_init(sim, sim_offload);
 
-    real* ptr;
-    ptr = offload_unpack(offload_data, offload_array,
-            sim_offload->B_offload_data.offload_array_length);
-    B_field_init(&sim->B_data, &sim_offload->B_offload_data, ptr);
+		real* ptr;
+		ptr = offload_unpack(offload_data, offload_array,
+				sim_offload->B_offload_data.offload_array_length);
+		B_field_init(&sim->B_data, &sim_offload->B_offload_data, ptr);
 
-    ptr = offload_unpack(offload_data, offload_array,
-            sim_offload->E_offload_data.offload_array_length);
-    E_field_init(&sim->E_data, &sim_offload->E_offload_data, ptr);
+		ptr = offload_unpack(offload_data, offload_array,
+				sim_offload->E_offload_data.offload_array_length);
+		E_field_init(&sim->E_data, &sim_offload->E_offload_data, ptr);
 
-    ptr = offload_unpack(offload_data, offload_array,
-            sim_offload->plasma_offload_data.offload_array_length);
-    plasma_init(&sim->plasma_data, &sim_offload->plasma_offload_data, ptr);
+		ptr = offload_unpack(offload_data, offload_array,
+				sim_offload->plasma_offload_data.offload_array_length);
+		plasma_init(&sim->plasma_data, &sim_offload->plasma_offload_data, ptr);
 
-    ptr = offload_unpack(offload_data, offload_array,
-            sim_offload->neutral_offload_data.offload_array_length);
-    neutral_init(&sim->neutral_data, &sim_offload->neutral_offload_data, ptr);
+		ptr = offload_unpack(offload_data, offload_array,
+				sim_offload->neutral_offload_data.offload_array_length);
+		neutral_init(&sim->neutral_data, &sim_offload->neutral_offload_data, ptr);
 
-    ptr = offload_unpack(offload_data, offload_array,
-            sim_offload->wall_offload_data.offload_array_length);
-    wall_init(&sim->wall_data, &sim_offload->wall_offload_data, ptr);  //wall.c
+		ptr = offload_unpack(offload_data, offload_array,
+				sim_offload->wall_offload_data.offload_array_length);
+		wall_init(&sim->wall_data, &sim_offload->wall_offload_data, ptr);  //wall.c
 
-    diag_init(&sim->diag_data, &sim_offload->diag_offload_data,
-              diag_offload_array);
+		diag_init(&sim->diag_data, &sim_offload->diag_offload_data,
+				diag_offload_array);
 
-    /**************************************************************************/
-    /* 2. Meta data (e.g. random number generator) is initialized.            */
-    /*                                                                        */
-    /**************************************************************************/
+		/**************************************************************************/
+		/* 2. Meta data (e.g. random number generator) is initialized.            */
+		/*                                                                        */
+		/**************************************************************************/
 
-    /**************************************************************************/
-    /* 3. Markers are put into simulation queue.                              */
-    /*                                                                        */
-    /**************************************************************************/
+		/**************************************************************************/
+		/* 3. Markers are put into simulation queue.                              */
+		/*                                                                        */
+		/**************************************************************************/
 
-    pq->n = 0;
-    pq_hybrid->n = 0;
-    for(int i = 0; i < n_particles; i++) {
-        if(p[i].endcond == 0) {
-            pq->n++;
-        }
-        else if(p[i].endcond == endcond_hybrid) {
-            pq_hybrid->n++;
-        }
-    }
+		pq->n = 0;
+		pq_hybrid->n = 0;
+		for(int i = 0; i < n_particles; i++) {
+			if(p[i].endcond == 0) {
+				pq->n++;
+			}
+			else if(p[i].endcond == endcond_hybrid) {
+				pq_hybrid->n++;
+			}
+		}
 
-    pq->p = (particle_state**) malloc(pq->n * sizeof(particle_state*));
-    pq_hybrid->p = (particle_state**)malloc(pq_hybrid->n*sizeof(particle_state*));
+		pq->p = (particle_state**) malloc(pq->n * sizeof(particle_state*));
+		pq_hybrid->p = (particle_state**)malloc(pq_hybrid->n*sizeof(particle_state*));
 
-    pq->finished = 0;
-    pq_hybrid->finished = 0;
+		pq->finished = 0;
+		pq_hybrid->finished = 0;
 
-    pq->next = 0;
-    pq_hybrid->next = 0;
-    for(int i = 0; i < n_particles; i++) {
-        if(p[i].endcond == 0) {
-            pq->p[pq->next++] = &p[i];
-        }
-        else if(p[i].endcond == endcond_hybrid) {
-            pq_hybrid->p[pq_hybrid->next++] = &p[i];
-        }
+		pq->next = 0;
+		pq_hybrid->next = 0;
+		for(int i = 0; i < n_particles; i++) {
+			if(p[i].endcond == 0) {
+				pq->p[pq->next++] = &p[i];
+			}
+			else if(p[i].endcond == endcond_hybrid) {
+				pq_hybrid->p[pq_hybrid->next++] = &p[i];
+			}
 
-    }
-    pq->next = 0;
+		}
+		pq->next = 0;
 
-    random_init(&sim.random_data, 0);
+		random_init(&sim.random_data, 0);
 
 #ifdef _OPENMP
-    print_out(VERBOSE_NORMAL,"%s: All fields initialized. Simulation begins, %d threads.\n",
-              targetname, omp_get_max_threads());
+		print_out(VERBOSE_NORMAL,"%s: All fields initialized. Simulation begins, %d threads.\n",
+				targetname, omp_get_max_threads());
 #else
-    print_out(VERBOSE_NORMAL,"%s: All fields initialized. Simulation begins, NO THREADS.\n",
-              targetname);
+		print_out(VERBOSE_NORMAL,"%s: All fields initialized. Simulation begins, NO THREADS.\n",
+				targetname);
 #endif
 
-// end of first target region
-}
+		// end of first target region
+	}
 
 #if NTEAMS == 0
 #pragma omp target teams is_device_ptr(sim, pq, pq_hybrid)
 #else
 #pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
 #endif
-{
+	{
 #ifdef _OPENMP
-    int ith = omp_get_num_threads();
-    int tth = omp_get_num_teams();
+		int ith = omp_get_num_threads();
+		int tth = omp_get_num_teams();
 #else
-    int ith = 1;
-    int tth =1;
+		int ith = 1;
+		int tth =1;
 #endif
 
-    printf("TARGET REGION 2 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
- 
-    /**************************************************************************/
-    /* 4. Threads are spawned. One thread is dedicated for monitoring         */
-    /*    progress, if monitoring is active.                                  */
-    /*                                                                        */
-    /**************************************************************************/
-#ifndef GPU
-    #pragma omp parallel sections num_threads(2)
-#endif
-    {
-#ifndef GPU
-        #pragma omp section
-#endif
-        {
-            /******************************************************************/
-            /* 5. Other threads execute marker simulation using the mode the  */
-            /*    user has chosen.                                            */
-            /*                                                                */
-            /******************************************************************/
-            if(pq->n > 0 && (sim->sim_mode == simulate_mode_gc
-                        || sim->sim_mode == simulate_mode_hybrid)) {
-                if(sim->enable_ada) {
-                    printf("Calling simulate_gc_adaptive\n");
-                    #pragma omp parallel
-                    simulate_gc_adaptive(pq, sim);
-                }
-                else {
-                    printf("Calling simulate_gc_fixed\n");
-                    #pragma omp parallel
-                    simulate_gc_fixed(pq, sim);
-                }
-            }
-            else if(pq->n > 0 && sim->sim_mode == simulate_mode_fo) {
+		printf("TARGET REGION 2 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 
-                printf("Calling simulate_fo_fixed\n");
-                #pragma omp parallel
-                {
+		/**************************************************************************/
+		/* 4. Threads are spawned. One thread is dedicated for monitoring         */
+		/*    progress, if monitoring is active.                                  */
+		/*                                                                        */
+		/**************************************************************************/
+#ifndef GPU
+#pragma omp parallel sections num_threads(2)
+#endif
+		{
+#ifndef GPU
+#pragma omp section
+#endif
+			{
+				/******************************************************************/
+				/* 5. Other threads execute marker simulation using the mode the  */
+				/*    user has chosen.                                            */
+				/*                                                                */
+				/******************************************************************/
+				if(pq->n > 0 && (sim->sim_mode == simulate_mode_gc
+							|| sim->sim_mode == simulate_mode_hybrid)) {
+					if(sim->enable_ada) {
+						printf("Calling simulate_gc_adaptive\n");
+#pragma omp parallel
+						simulate_gc_adaptive(pq, sim);
+					}
+					else {
+						printf("Calling simulate_gc_fixed\n");
+#pragma omp parallel
+						simulate_gc_fixed(pq, sim);
+					}
+				}
+				else if(pq->n > 0 && sim->sim_mode == simulate_mode_fo) {
+
+					printf("Calling simulate_fo_fixed\n");
+#pragma omp parallel
+					{
 #ifdef _OPENMP
-                int ith = omp_get_num_threads();
-                int tth = omp_get_num_teams();
+						int ith = omp_get_num_threads();
+						int tth = omp_get_num_teams();
 #else
-                int ith = 1;
-                int tth =1;
+						int ith = 1;
+						int tth =1;
 #endif
-                printf("PARALLEL REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
-                simulate_fo_fixed(pq, sim);
-                printf("AFTER simulate_fo_fixed\n");
-                }
-            }
-            else if(pq->n > 0 && sim->sim_mode == simulate_mode_ml) {
- 
-                printf("Calling simulate_ml_adaptive\n");
-                #pragma omp parallel
-                simulate_ml_adaptive(pq, sim);
-            }
-        }
+						printf("PARALLEL REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+						simulate_fo_fixed(pq, sim);
+						printf("AFTER simulate_fo_fixed\n");
+					}
+				}
+				else if(pq->n > 0 && sim->sim_mode == simulate_mode_ml) {
+
+					printf("Calling simulate_ml_adaptive\n");
+#pragma omp parallel
+					simulate_ml_adaptive(pq, sim);
+				}
+			}
 
 
 #ifndef GPU
-        #pragma omp section
-        {
+#pragma omp section
+			{
 #if VERBOSE > 1
-            /* Update progress until simulation is complete.             */
-            /* Trim .h5 from filename and replace it with _??????.stdout */
-            char filename[256], outfn[256];
-            strcpy(outfn, sim_offload->hdf5_out);
-            outfn[strlen(outfn)-3] = '\0';
-            sprintf(filename, "%s.stdout", outfn);
-            sim_monitor(filename, pq->n, pq->finished);
+				/* Update progress until simulation is complete.             */
+				/* Trim .h5 from filename and replace it with _??????.stdout */
+				char filename[256], outfn[256];
+				strcpy(outfn, sim_offload->hdf5_out);
+				outfn[strlen(outfn)-3] = '\0';
+				sprintf(filename, "%s.stdout", outfn);
+				sim_monitor(filename, pq->n, pq->finished);
 #endif
-        }
+			}
 #endif
-    }
-//end of second target region
-}
-        printf("BEFORE simulate_mode_hybrid\n");
+		}
+		//end of second target region
+	}
+	printf("BEFORE simulate_mode_hybrid\n");
 
-    /**************************************************************************/
-    /* 6. (If hybrid mode is active) Markers with hybrid end condition active */
-    /*    are placed on a new queue, and they have their end condition        */
-    /*    deactivated and they are simulated with simulate_fo_fixed.c until   */
-    /*    they have met some other end condition. Threads are spawned and     */
-    /*    progress is monitored as previously.                                */
-    /*                                                                        */
-    /**************************************************************************/
+	/**************************************************************************/
+	/* 6. (If hybrid mode is active) Markers with hybrid end condition active */
+	/*    are placed on a new queue, and they have their end condition        */
+	/*    deactivated and they are simulated with simulate_fo_fixed.c until   */
+	/*    they have met some other end condition. Threads are spawned and     */
+	/*    progress is monitored as previously.                                */
+	/*                                                                        */
+	/**************************************************************************/
 #pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
-{
-    int n_new = 0;
-    if(sim->sim_mode == simulate_mode_hybrid) {
+	{
+		int n_new = 0;
+		if(sim->sim_mode == simulate_mode_hybrid) {
 
-        printf("INSIDE simulate_mode_hybrid\n");
-        /* Determine the number markers that should be run
-         * in fo after previous gc simulation */
-        for(int i = 0; i < pq->n; i++) {
-            if(pq->p[i]->endcond == endcond_hybrid) {
-                /* Check that there was no wall between when moving from
-                   gc to fo */
-                int tile = wall_hit_wall(pq->p[i]->r, pq->p[i]->phi, pq->p[i]->z,
-                        pq->p[i]->rprt, pq->p[i]->phiprt, pq->p[i]->zprt,
-                        &sim->wall_data);
-                if(tile > 0) {
-                    pq->p[i]->walltile = tile;
-                    pq->p[i]->endcond |= endcond_wall;
-                }
-                else {
-                    n_new++;
-                }
-            }
-        }
+			printf("INSIDE simulate_mode_hybrid\n");
+			/* Determine the number markers that should be run
+			 * in fo after previous gc simulation */
+			for(int i = 0; i < pq->n; i++) {
+				if(pq->p[i]->endcond == endcond_hybrid) {
+					/* Check that there was no wall between when moving from
+					   gc to fo */
+					int tile = wall_hit_wall(pq->p[i]->r, pq->p[i]->phi, pq->p[i]->z,
+							pq->p[i]->rprt, pq->p[i]->phiprt, pq->p[i]->zprt,
+							&sim->wall_data);
+					if(tile > 0) {
+						pq->p[i]->walltile = tile;
+						pq->p[i]->endcond |= endcond_wall;
+					}
+					else {
+						n_new++;
+					}
+				}
+			}
 
-    }
-        printf("AFTER simulate_mode_hybrid %d\n",n_new);
+		}
+		printf("AFTER simulate_mode_hybrid %d\n",n_new);
 
-    if(n_new > 0) {
-        printf("BEFORE MEMCOPY\n");
-        /* Reallocate and add "old" hybrid particles to the hybrid queue */
-        particle_state** tmp = pq_hybrid->p;
-        pq_hybrid->p = (particle_state**) malloc((pq_hybrid->n + n_new)
-                                                * sizeof(particle_state*));
-        memcpy(pq_hybrid->p, tmp, pq_hybrid->n * sizeof(particle_state*));
-        free(tmp);
+		if(n_new > 0) {
+			printf("BEFORE MEMCOPY\n");
+			/* Reallocate and add "old" hybrid particles to the hybrid queue */
+			particle_state** tmp = pq_hybrid->p;
+			pq_hybrid->p = (particle_state**) malloc((pq_hybrid->n + n_new)
+					* sizeof(particle_state*));
+			memcpy(pq_hybrid->p, tmp, pq_hybrid->n * sizeof(particle_state*));
+			free(tmp);
 
-        /* Add "new" hybrid particles and reset their end condition */
-        pq_hybrid->n += n_new;
-        for(int i = 0; i < pq->n; i++) {
-            if(pq->p[i]->endcond == endcond_hybrid) {
-                pq->p[i]->endcond = 0;
-                pq_hybrid->p[pq_hybrid->next++] = pq->p[i];
-            }
-        }
-        pq_hybrid->next = 0;
+			/* Add "new" hybrid particles and reset their end condition */
+			pq_hybrid->n += n_new;
+			for(int i = 0; i < pq->n; i++) {
+				if(pq->p[i]->endcond == endcond_hybrid) {
+					pq->p[i]->endcond = 0;
+					pq_hybrid->p[pq_hybrid->next++] = pq->p[i];
+				}
+			}
+			pq_hybrid->next = 0;
 
-        sim->record_mode = 1;//Make sure we don't collect fos in gc diagnostics
-        printf("AFTER MEMCOPY\n");
-    }
+			sim->record_mode = 1;//Make sure we don't collect fos in gc diagnostics
+			printf("AFTER MEMCOPY\n");
+		}
 
-}  // End of target region
+	}  // End of target region
 
 #ifndef GPU
-        #pragma omp parallel sections num_threads(2)
+#pragma omp parallel sections num_threads(2)
 #endif
-        {
+	{
 #ifndef GPU
-            #pragma omp section
+#pragma omp section
 #endif
 
 #if NTEAMS == 0
@@ -377,72 +377,72 @@ void simulate(int id, int n_particles,
 #else
 #pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
 #endif
-{
+		{
 #ifdef _OPENMP
-    int ith = omp_get_num_threads();
-    int tth = omp_get_num_teams();
+			int ith = omp_get_num_threads();
+			int tth = omp_get_num_teams();
 #else
-    int ith = 1;
-    int tth =1;
+			int ith = 1;
+			int tth =1;
 #endif
 
-    printf("TARGET REGION 4 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
-            {
+			printf("TARGET REGION 4 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+			{
 #ifdef _OPENMP
-    			int ith = omp_get_num_threads();
-    			int tth = omp_get_num_teams();
+				int ith = omp_get_num_threads();
+				int tth = omp_get_num_teams();
 #else
-    			int ith = 1;
-    			int tth =1;
+				int ith = 1;
+				int tth =1;
 #endif
-                printf("PARALLEL REGION 5 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
-                #pragma omp parallel
-                simulate_fo_fixed(pq_hybrid, sim);
-            }
+				printf("PARALLEL REGION 5 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+#pragma omp parallel
+				simulate_fo_fixed(pq_hybrid, sim);
+			}
 
-printf("EXIT PARALLEL REGION 5\n");
+			printf("EXIT PARALLEL REGION 5\n");
 
 #ifdef SKIPSECTION
 
 
 #ifndef GPU
-            #pragma omp section
+#pragma omp section
 #endif
-            {
+			{
 #if VERBOSE > 1
-                /* Trim .h5 from filename and replace it with _??????.stdout */
-                char filename[256], outfn[256];
-                strcpy(outfn, sim_offload->hdf5_out);
-                outfn[strlen(outfn)-3] = '\0';
-                sprintf(filename, "%s.stdout", outfn);
-                sim_monitor(filename, &pq_hybrid->n, &pq_hybrid->finished);
+				/* Trim .h5 from filename and replace it with _??????.stdout */
+				char filename[256], outfn[256];
+				strcpy(outfn, sim_offload->hdf5_out);
+				outfn[strlen(outfn)-3] = '\0';
+				sprintf(filename, "%s.stdout", outfn);
+				sim_monitor(filename, &pq_hybrid->n, &pq_hybrid->finished);
 #endif
-            }
+			}
 #endif // SKIPSECTION
 
-// end of target region
-}
+			// end of target region
+		}
+	}
 
-    /**************************************************************************/
-    /* 7. Simulation data is deallocated except for data that is mapped back  */
-    /*    to host.                                                            */
-    /*                                                                        */
-    /**************************************************************************/
+		/**************************************************************************/
+		/* 7. Simulation data is deallocated except for data that is mapped back  */
+		/*    to host.                                                            */
+		/*                                                                        */
+		/**************************************************************************/
 #pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
-{
-    free(pq->p);
-    free(pq_hybrid->p);
-    diag_free(&sim->diag_data);
-}
-
-        }
+		{
+			free(pq->p);
+			free(pq_hybrid->p);
+			diag_free(&sim->diag_data);
+		}
 
 
-    /**************************************************************************/
-    /* 8. Execution returns to host where this function was called.           */
-    /*                                                                        */
-    /**************************************************************************/
-    //print_out(VERBOSE_NORMAL, "%s: Simulation complete.\n", targetname);
+
+	/**************************************************************************/
+	/* 8. Execution returns to host where this function was called.           */
+	/*                                                                        */
+	/**************************************************************************/
+	//print_out(VERBOSE_NORMAL, "%s: Simulation complete.\n", targetname);
 
 
 }
@@ -457,9 +457,9 @@ printf("EXIT PARALLEL REGION 5\n");
  * @param sim simulation offload struct which has all fields initialized
  */
 void simulate_init_offload(sim_offload_data* sim) {
-    if(sim->disable_gctransform) {
-        gctransform_setorder(0);
-    }
+	if(sim->disable_gctransform) {
+		gctransform_setorder(0);
+	}
 }
 
 /**
@@ -473,38 +473,38 @@ void simulate_init_offload(sim_offload_data* sim) {
  */
 void sim_init(sim_data* sim, sim_offload_data* offload_data) {
 
-    sim->sim_mode             = offload_data->sim_mode;
-    sim->enable_ada           = offload_data->enable_ada;
-    sim->record_mode          = offload_data->record_mode;
+	sim->sim_mode             = offload_data->sim_mode;
+	sim->enable_ada           = offload_data->enable_ada;
+	sim->record_mode          = offload_data->record_mode;
 
-    sim->fix_usrdef_use       = offload_data->fix_usrdef_use;
-    sim->fix_usrdef_val       = offload_data->fix_usrdef_val;
-    sim->fix_gyrodef_nstep    = offload_data->fix_gyrodef_nstep;
+	sim->fix_usrdef_use       = offload_data->fix_usrdef_use;
+	sim->fix_usrdef_val       = offload_data->fix_usrdef_val;
+	sim->fix_gyrodef_nstep    = offload_data->fix_gyrodef_nstep;
 
-    sim->ada_tol_orbfol       = offload_data->ada_tol_orbfol;
-    sim->ada_tol_clmbcol      = offload_data->ada_tol_clmbcol;
-    sim->ada_max_drho         = offload_data->ada_max_drho;
-    sim->ada_max_dphi         = offload_data->ada_max_dphi;
+	sim->ada_tol_orbfol       = offload_data->ada_tol_orbfol;
+	sim->ada_tol_clmbcol      = offload_data->ada_tol_clmbcol;
+	sim->ada_max_drho         = offload_data->ada_max_drho;
+	sim->ada_max_dphi         = offload_data->ada_max_dphi;
 
-    sim->enable_orbfol        = offload_data->enable_orbfol;
-    sim->enable_clmbcol       = offload_data->enable_clmbcol;
-    sim->disable_gctransform  = offload_data->disable_gctransform;
-    sim->disable_energyccoll  = offload_data->disable_energyccoll;
-    sim->disable_pitchccoll   = offload_data->disable_pitchccoll;
-    sim->disable_gcdiffccoll  = offload_data->disable_gcdiffccoll;
+	sim->enable_orbfol        = offload_data->enable_orbfol;
+	sim->enable_clmbcol       = offload_data->enable_clmbcol;
+	sim->disable_gctransform  = offload_data->disable_gctransform;
+	sim->disable_energyccoll  = offload_data->disable_energyccoll;
+	sim->disable_pitchccoll   = offload_data->disable_pitchccoll;
+	sim->disable_gcdiffccoll  = offload_data->disable_gcdiffccoll;
 
-    sim->endcond_active       = offload_data->endcond_active;
-    sim->endcond_max_simtime  = offload_data->endcond_max_simtime;
-    sim->endcond_max_cputime  = offload_data->endcond_max_cputime;
-    sim->endcond_min_rho      = offload_data->endcond_min_rho;
-    sim->endcond_max_rho      = offload_data->endcond_max_rho;
-    sim->endcond_min_ekin     = offload_data->endcond_min_ekin;
-    sim->endcond_min_thermal  = offload_data->endcond_min_thermal;
-    sim->endcond_max_tororb   = offload_data->endcond_max_tororb;
-    sim->endcond_max_polorb   = offload_data->endcond_max_polorb;
+	sim->endcond_active       = offload_data->endcond_active;
+	sim->endcond_max_simtime  = offload_data->endcond_max_simtime;
+	sim->endcond_max_cputime  = offload_data->endcond_max_cputime;
+	sim->endcond_min_rho      = offload_data->endcond_min_rho;
+	sim->endcond_max_rho      = offload_data->endcond_max_rho;
+	sim->endcond_min_ekin     = offload_data->endcond_min_ekin;
+	sim->endcond_min_thermal  = offload_data->endcond_min_thermal;
+	sim->endcond_max_tororb   = offload_data->endcond_max_tororb;
+	sim->endcond_max_polorb   = offload_data->endcond_max_polorb;
 
-    mccc_init(&sim->mccc_data, !sim->disable_energyccoll,
-              !sim->disable_pitchccoll, !sim->disable_gcdiffccoll);
+	mccc_init(&sim->mccc_data, !sim->disable_energyccoll,
+			!sim->disable_pitchccoll, !sim->disable_gcdiffccoll);
 }
 
 /**
@@ -524,46 +524,46 @@ void sim_init(sim_data* sim, sim_offload_data* offload_data) {
  * @param finished pointer to number of finished markers in simulation queue
  */
 void sim_monitor(char* filename, volatile int* n, volatile int* finished) {
-// With the gcc offload compiler the linker gives the error: "unresolved symbol _fseeko_r"
+	// With the gcc offload compiler the linker gives the error: "unresolved symbol _fseeko_r"
 #ifdef CLAA
-    /* Open a file for writing simulation progress */
-    FILE *f = fopen(filename, "w");
-    if (f == NULL) {
-        print_out(VERBOSE_DEBUG,
-                  "Warning. %s could not be opened for progress updates.\n",
-                  filename);
-        return;
-    }
+	/* Open a file for writing simulation progress */
+	FILE *f = fopen(filename, "w");
+	if (f == NULL) {
+		print_out(VERBOSE_DEBUG,
+				"Warning. %s could not be opened for progress updates.\n",
+				filename);
+		return;
+	}
 
-    real time_sim_started = A5_WTIME;
-    int stopflag = 1; /* Flag ensures progress is written one last time at 100% */
-    int n_temp, finished_temp; /* Use these to store volatile variables so that
-                                  their value does not change during one loop */
-    while(stopflag) {
-        n_temp = *n;
-        finished_temp = *finished;
-        real fracprog = ((real) finished_temp)/n_temp;
-        real timespent = (A5_WTIME)-time_sim_started;
+	real time_sim_started = A5_WTIME;
+	int stopflag = 1; /* Flag ensures progress is written one last time at 100% */
+	int n_temp, finished_temp; /* Use these to store volatile variables so that
+				      their value does not change during one loop */
+	while(stopflag) {
+		n_temp = *n;
+		finished_temp = *finished;
+		real fracprog = ((real) finished_temp)/n_temp;
+		real timespent = (A5_WTIME)-time_sim_started;
 
-        if(n_temp == finished_temp) {
-            stopflag = 0;
-        }
+		if(n_temp == finished_temp) {
+			stopflag = 0;
+		}
 
-        if(fracprog == 0) {
-            fprintf(f, "No marker has finished simulation yet. "
-                    "Time spent: %.2f h\n", timespent/3600);
-        }
-        else {
-            fprintf(f, "Progress: %d/%d, %.2f %%. Time spent: %.2f h, "
-                    "estimated time to finish: %.2f h\n", finished_temp, n_temp,
-                    100*fracprog, timespent/3600, (1/fracprog-1)*timespent/3600);
-        }
-        fflush(f);
-//CLAA
-        //sleep(A5_PRINTPROGRESSINTERVAL);
-    }
+		if(fracprog == 0) {
+			fprintf(f, "No marker has finished simulation yet. "
+					"Time spent: %.2f h\n", timespent/3600);
+		}
+		else {
+			fprintf(f, "Progress: %d/%d, %.2f %%. Time spent: %.2f h, "
+					"estimated time to finish: %.2f h\n", finished_temp, n_temp,
+					100*fracprog, timespent/3600, (1/fracprog-1)*timespent/3600);
+		}
+		fflush(f);
+		//CLAA
+		//sleep(A5_PRINTPROGRESSINTERVAL);
+	}
 
-    fprintf(f, "Simulation finished.\n");
-    fclose(f);
+	fprintf(f, "Simulation finished.\n");
+	fclose(f);
 #endif
 }
