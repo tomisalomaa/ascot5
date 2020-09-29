@@ -65,7 +65,9 @@ void random_drand48_uniform_simd(int n, double* r);
 void random_drand48_normal_simd(int n, double* r);
 
 #define random_init(data, seed) srand48(seed)
+//#define random_init(data, seed) 
 #define random_uniform(data) drand48()
+//#define random_uniform(data) 1.
 #define random_normal(data) random_drand_normal()
 #define random_uniform_simd(data, n, r) random_drand48_uniform_simd(n, r)
 #define random_normal_simd(data, n, r) random_drand48_normal_simd(n, r)

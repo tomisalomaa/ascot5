@@ -8,6 +8,10 @@
 #include "ascot5.h"
 #include "math.h"
 
+#pragma omp declare target
+double drand48();
+#pragma omp end declare target
+
 double math_simpson_helper(double (*f)(double), double a, double b, double eps,
                            double S, double fa, double fb, double fc,
                            int bottom);

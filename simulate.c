@@ -28,8 +28,8 @@
 #include "simulate/mccc/mccc.h"
 #include "gctransform.h"
 
-#define NTEAMS 1
-#define NTHREADS 1
+#define NTEAMS 1024 
+#define NTHREADS 1024
 
 #pragma omp declare target
 void sim_init(sim_data* sim, sim_offload_data* offload_data);
@@ -89,22 +89,30 @@ void simulate(int id, int n_particles,
 		real* diag_offload_array) {
 
 	//define pointers to main structures
-
-	sim_data *sim;
+	//@@printf("@@in simulate...\n"); fflush(stdout);
+	//
+	sim_data       *sim;
 	particle_queue *pq;
 	particle_queue *pq_hybrid;
 #ifdef GPU
-	sim = (sim_data*) omp_target_alloc(sizeof(sim_data),omp_get_default_device());
-	pq = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
+	sim       = (sim_data*)       omp_target_alloc(sizeof(sim_data),      omp_get_default_device());
+	pq        = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
 	pq_hybrid = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
+	//printf("sim  = %p\n", sim);
+	//printf("pq   = %p, n = %d\n", pq, pq->n);
+	//printf("pq_h = %p\n", pq_hybrid);
 #else
-	sim = (sim_data*) malloc(sizeof(sim_data));
-	pq = (particle_queue*) malloc(sizeof(particle_queue));
+	sim       = (sim_data*)       malloc(sizeof(sim_data));
+	pq        = (particle_queue*) malloc(sizeof(particle_queue));
 	pq_hybrid = (particle_queue*) malloc(sizeof(particle_queue));
 #endif
+	//
+        int h = omp_get_initial_device();
+        int t = omp_get_default_device();
+        //
+        int dev = t; // t for the GPU h for the CPU
 
-
-#pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
+#pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid) //device(dev)
 	{
 
 #ifdef _OPENMP
@@ -114,15 +122,17 @@ void simulate(int id, int n_particles,
 		int ith = 1;
 		int tth = 1;
 #endif
-
-		printf("TARGET REGION 1 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
-
+		//
+                //@@printf("initial device = %d, number of devices = %d, default device = %d, number of teams = %d, number of threads = %d\n", h, t, omp_get_num_devices(), ith, tth);
+		//
+		//@@printf("TARGET REGION 1 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+		//
 		char targetname[5];
 		if(id == 0) {
-			sprintf(targetname, "host");
+			//sprintf(targetname, "host");
 		}
 		else {
-			sprintf(targetname, "mic%d", id-1);
+			//sprintf(targetname, "mic%d", id-1);
 		}
 
 
@@ -169,6 +179,7 @@ void simulate(int id, int n_particles,
 		/**************************************************************************/
 
 		pq->n = 0;
+		printf("pq->n = %d\n", pq->n);
 		pq_hybrid->n = 0;
 		for(int i = 0; i < n_particles; i++) {
 			if(p[i].endcond == 0) {
@@ -210,10 +221,14 @@ void simulate(int id, int n_particles,
 
 		// end of first target region
 	}
+	//printf("n = %d\n", pq->n);
+	//printf("sim_mode = %d\n", sim->sim_mode);
+	//exit(0);
 
 #if NTEAMS == 0
 #pragma omp target teams is_device_ptr(sim, pq, pq_hybrid)
 #else
+//#pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
 #pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
 #endif
 	{
@@ -222,10 +237,10 @@ void simulate(int id, int n_particles,
 		int tth = omp_get_num_teams();
 #else
 		int ith = 1;
-		int tth =1;
+		int tth = 1;
 #endif
-
-		printf("TARGET REGION 2 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+		//@@printf("TARGET REGION 2 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+                //@@printf("initial device = %d, number of devices = %d, default device = %d, number of teams = %d, number of threads = %d\n", h, t, omp_get_num_devices(), tth, ith);
 
 		/**************************************************************************/
 		/* 4. Threads are spawned. One thread is dedicated for monitoring         */
@@ -248,19 +263,20 @@ void simulate(int id, int n_particles,
 				if(pq->n > 0 && (sim->sim_mode == simulate_mode_gc
 							|| sim->sim_mode == simulate_mode_hybrid)) {
 					if(sim->enable_ada) {
-						printf("Calling simulate_gc_adaptive\n");
+						//@@printf("Calling simulate_gc_adaptive\n"); 
 #pragma omp parallel
 						simulate_gc_adaptive(pq, sim);
 					}
 					else {
-						printf("Calling simulate_gc_fixed\n");
+						//@@printf("Calling simulate_gc_fixed\n"); 
 #pragma omp parallel
 						simulate_gc_fixed(pq, sim);
 					}
 				}
-				else if(pq->n > 0 && sim->sim_mode == simulate_mode_fo) {
+				else 
+				if(pq->n > 0 && sim->sim_mode == simulate_mode_fo) {
 
-					printf("Calling simulate_fo_fixed\n");
+					//@@printf("Calling simulate_fo_fixed\n"); 
 #pragma omp parallel
 					{
 #ifdef _OPENMP
@@ -268,19 +284,22 @@ void simulate(int id, int n_particles,
 						int tth = omp_get_num_teams();
 #else
 						int ith = 1;
-						int tth =1;
+						int tth = 1;
 #endif
-						printf("PARALLEL REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+						//@@printf("PARALLEL REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 						simulate_fo_fixed(pq, sim);
-						printf("AFTER simulate_fo_fixed\n");
+						//@@printf("AFTER simulate_fo_fixed\n"); 
 					}
 				}
-				else if(pq->n > 0 && sim->sim_mode == simulate_mode_ml) {
+#if 1
+				else 
+				if(pq->n > 0 && sim->sim_mode == simulate_mode_ml) {
 
-					printf("Calling simulate_ml_adaptive\n");
+					//@@printf("Calling simulate_ml_adaptive\n"); 
 #pragma omp parallel
 					simulate_ml_adaptive(pq, sim);
 				}
+#endif
 			}
 
 
@@ -301,7 +320,7 @@ void simulate(int id, int n_particles,
 		}
 		//end of second target region
 	}
-	printf("BEFORE simulate_mode_hybrid\n");
+	//@@printf("BEFORE simulate_mode_hybrid\n"); fflush(stdout);
 
 	/**************************************************************************/
 	/* 6. (If hybrid mode is active) Markers with hybrid end condition active */
@@ -316,7 +335,7 @@ void simulate(int id, int n_particles,
 		int n_new = 0;
 		if(sim->sim_mode == simulate_mode_hybrid) {
 
-			printf("INSIDE simulate_mode_hybrid\n");
+			//@@printf("INSIDE simulate_mode_hybrid\n");
 			/* Determine the number markers that should be run
 			 * in fo after previous gc simulation */
 			for(int i = 0; i < pq->n; i++) {
@@ -337,10 +356,10 @@ void simulate(int id, int n_particles,
 			}
 
 		}
-		printf("AFTER simulate_mode_hybrid %d\n",n_new);
+		//@@printf("AFTER simulate_mode_hybrid %d\n",n_new);
 
 		if(n_new > 0) {
-			printf("BEFORE MEMCOPY\n");
+			//@@printf("BEFORE MEMCOPY\n");
 			/* Reallocate and add "old" hybrid particles to the hybrid queue */
 			particle_state** tmp = pq_hybrid->p;
 			pq_hybrid->p = (particle_state**) malloc((pq_hybrid->n + n_new)
@@ -359,7 +378,7 @@ void simulate(int id, int n_particles,
 			pq_hybrid->next = 0;
 
 			sim->record_mode = 1;//Make sure we don't collect fos in gc diagnostics
-			printf("AFTER MEMCOPY\n");
+			//@@printf("AFTER MEMCOPY\n");
 		}
 
 	}  // End of target region
@@ -386,7 +405,7 @@ void simulate(int id, int n_particles,
 			int tth =1;
 #endif
 
-			printf("TARGET REGION 4 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+			//@@printf("TARGET REGION 4 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 			{
 #ifdef _OPENMP
 				int ith = omp_get_num_threads();
@@ -395,12 +414,12 @@ void simulate(int id, int n_particles,
 				int ith = 1;
 				int tth =1;
 #endif
-				printf("PARALLEL REGION 5 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+				//@@printf("PARALLEL REGION 5 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 #pragma omp parallel
 				simulate_fo_fixed(pq_hybrid, sim);
 			}
 
-			printf("EXIT PARALLEL REGION 5\n");
+			//@@printf("EXIT PARALLEL REGION 5\n");
 
 #ifdef SKIPSECTION
 

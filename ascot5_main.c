@@ -249,6 +249,13 @@ int main(int argc, char** argv) {
     else { n = n / mpi_size; }
     printf("@@ n local particles = %d\n", n);
 
+
+        int h = omp_get_initial_device();
+        int t = omp_get_default_device();
+        int nd = omp_get_num_devices();
+
+printf("***** initial device = %d, default device = %d, number of devices = %d\n", h, t, nd);
+
     /* Set up particlestates on host, needs magnetic field evaluation */
     print_out0(VERBOSE_NORMAL, mpi_rank,
                "\nInitializing marker states.\n");
@@ -314,8 +321,8 @@ int main(int argc, char** argv) {
     omp_set_nested(1);
 #endif
 	//sim.endcond_max_simtime = 0.00001;
-sim.endcond_max_simtime = 0.000002;
-printf("max time = %f, n = %d, n_host = %d, n_mic = %d\n", sim.endcond_max_simtime, n, n_host, n_mic);
+	//sim.endcond_max_simtime = 0.000002;
+//printf("max time = %f, n = %d, n_host = %d, n_mic = %d\n", sim.endcond_max_simtime, n, n_host, n_mic);
 
 /* Actual marker simulation happens here. Threads are spawned which
  * distribute the execution between target(s) and host. Both input and
@@ -323,23 +330,23 @@ printf("max time = %f, n = %d, n_host = %d, n_mic = %d\n", sim.endcond_max_simti
  * at the target and completed within the simulate() function.*/
 /* No target, marker simulation happens where the code execution began.
  * Offloading is only emulated. */
-printf("@@ ps = %p\n", ps);
 #ifdef GPU
+#warning "Offloading on the GPU"
 #pragma omp target data map( \
 		offload_data, \
                 ps[0:n], \
                 offload_array[0:offload_data.offload_array_length], \
                 diag_offload_array_host[0:sim.diag_offload_data.offload_array_length], \
-                sim )
+                sim ) device(t)
 #endif
         {
+        int h = omp_get_initial_device();
+        int t = omp_get_default_device();
+        int nd = omp_get_num_devices();
+
+	printf("***** initial device = %d, default device = %d, number of deives = %d\n", h, t, nd);
             host_start = A5_WTIME;
-            simulate(0, n_host, ps, &sim, &offload_data, offload_array,
-//#ifdef GPU
-//                diag_offload_array_mic0);
-//#else
-                diag_offload_array_host);
-//#endif
+            simulate(0, n_host, ps, &sim, &offload_data, offload_array, diag_offload_array_host);
             host_end = A5_WTIME;
         }
 //#endif

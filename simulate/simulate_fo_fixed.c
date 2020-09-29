@@ -49,7 +49,8 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim);
  * @param pq particles to be simulated
  * @param sim simulation data struct
  */
-void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
+void simulate_fo_fixed(particle_queue* pq, sim_data* sim) 
+{
     int cycle[NSIMD]  __memalign__; // Flag indigating whether a new marker was initialized
     real hin[NSIMD]  __memalign__;  // Time step
     int nnnn;
@@ -88,9 +89,9 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
     for(int i = 0; i < NSIMD; i++) {
         if(cycle[i] > 0) {
             hin[i] = simulate_fo_fixed_inidt(sim, &p, i);
-
         }
     }
+    //return;
 
     ///////////printf("=================== PASSED FO_FIXED 3 ===================== %d\n",p.id[0]);
 
@@ -225,6 +226,8 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
 real simulate_fo_fixed_inidt(sim_data* sim, particle_simd_fo* p, int i) {
 
     real h;
+	//printf("%d: %f %f %f\n", i, p->B_r[i], p->B_phi[i], p->B_z[i] );
+	//printf("sim->fix_usrdef_use=%d\n", sim->fix_usrdef_use);
 
     /* Value defined directly by user */
     if(sim->fix_usrdef_use) {
@@ -232,6 +235,8 @@ real simulate_fo_fixed_inidt(sim_data* sim, particle_simd_fo* p, int i) {
     }
     else {
         /* Value calculated from gyrotime */
+	//printf("%d: %f %f %f\n", i, p->B_r[i], p->B_phi[i], p->B_z[i] );
+	//return 1.;
         real Bnorm = math_normc( p->B_r[i], p->B_phi[i], p->B_z[i] );
         real vnorm = math_normc( p->rdot[i], p->phidot[i]*p->r[i], p->zdot[i] );
         real gyrotime = CONST_2PI/

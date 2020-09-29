@@ -1,6 +1,6 @@
 # make ascot5_main MPI=0 VERBOSE=0 GPU=1 OMP=1 TARGET=1 to compile for thr GPU
 # see the README file for more details
-CC=gcc
+CC=h5pcc
 
 ifdef NSIMD
 	DEFINES+=-DNSIMD=$(NSIMD)
@@ -37,23 +37,26 @@ ifneq ($(CC),h5cc)
 endif
 
 ifeq ($(OMP),1)
+        CFLAGS+=-qsmp=omp -qhot #-mcpu=power9 -qarch=pwr9
 # uncomment this to compile for CPU only without SIMD
         #CFLAGS+=-fopenmp -foffload=disable
 # uncomment this to compile for CPU only with SIMD
         #CFLAGS+=-fopenmp -DSIMD -foffload=disable
 # uncomment this to compile for GPU 
-        #CFLAGS+=-fopenmp 
 ifeq ($(OMP)$(TARGET), 11)
-	CFLAGS+=-fopenmp
+	#CFLAGS+=-DSIMD
 else
-	CFLAGS+=-fopenmp -DSIMD -foffload=disable
+	#CFLAGS+=-qopenmp -DSIMD -qno-openmp-offload
+	#CFLAGS+=-DSIMD 
 endif
 endif
 
 ifeq ($(GPU),1)
-        DEFINES+=-DGPU
-        CFLAGS+=-foffload="-O0 -lm -g" -fno-stack-protector
+        DEFINES+=-DGPU -U__STRICT_ANSI__
+        CFLAGS+=-qoffload 
         #CFLAGS+=-foffload="-lm"
+else
+	CFLAGS+= -Ofast -g -march=native -qopt-zmm-usage=high
 endif
 
 ifdef VERBOSE
@@ -63,9 +66,8 @@ else
 endif
 
 # set here the level of optimization.  
-CFLAGS+= -lm -fPIC -std=c11 $(DEFINES) $(FLAGS) #-DFULLMCCC
+CFLAGS+= -lm -lc -fPIC -std=c11 $(DEFINES) $(FLAGS) #-DFULLMCCC
 #CFLAGS+= -Ofast -g -march=skylake-avx512
-CFLAGS+= -O0 -g -march=native
 
 # Write CFLAGS and CC to a file to be included into output
 $(shell echo "#define CFLAGS " $(CFLAGS) > compiler_flags.h)
