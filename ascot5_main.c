@@ -344,7 +344,7 @@ printf("***** initial device = %d, default device = %d, number of devices = %d\n
         int t = omp_get_default_device();
         int nd = omp_get_num_devices();
 
-	printf("***** initial device = %d, default device = %d, number of deives = %d\n", h, t, nd);
+	printf("***** initial device = %d, default device = %d, number of devices = %d\n", h, t, nd);
             host_start = A5_WTIME;
             simulate(0, n_host, ps, &sim, &offload_data, offload_array, diag_offload_array_host);
             host_end = A5_WTIME;

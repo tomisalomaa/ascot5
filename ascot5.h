@@ -63,7 +63,7 @@
 #define str_macro(c) stringify(c)
 
 #include <omp.h>
-#include <time.h>
+//#include <time.h>
 
 /** This is used to tell the compiler that we want a variable aligned to
  * 64 bits for Xeon Phi; may not be always necessary */

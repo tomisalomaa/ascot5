@@ -28,13 +28,28 @@
 #include "simulate/mccc/mccc.h"
 #include "gctransform.h"
 
-#define NTEAMS 1024 
-#define NTHREADS 1024
+#define NTEAMS 80 
+#define NTHREADS 40
 
 #pragma omp declare target
 void sim_init(sim_data* sim, sim_offload_data* offload_data);
 void sim_monitor(char* filename, volatile int* n, volatile int* finished);
 #pragma omp end declare target
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <linux/time.h>
+
+#define _POSIX_C_SOURCE  199309L
+
+double myseconds()
+{
+	struct timespec mysec;
+	clock_gettime( CLOCK_REALTIME, &mysec);
+        return ( (double) mysec.tv_sec + (double) mysec.tv_nsec * 1.e-9 );
+}
+
+
 
 /**
  * @brief Execute marker simulation
@@ -111,6 +126,7 @@ void simulate(int id, int n_particles,
         int t = omp_get_default_device();
         //
         int dev = t; // t for the GPU h for the CPU
+	double t1 = -myseconds();
 
 #pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid) //device(dev)
 	{
@@ -221,10 +237,13 @@ void simulate(int id, int n_particles,
 
 		// end of first target region
 	}
+	t1 += myseconds();
+	printf("Region 1 took %f s.\n", t1);
 	//printf("n = %d\n", pq->n);
 	//printf("sim_mode = %d\n", sim->sim_mode);
 	//exit(0);
 
+	double t2 = -myseconds();
 #if NTEAMS == 0
 #pragma omp target teams is_device_ptr(sim, pq, pq_hybrid)
 #else
@@ -240,7 +259,8 @@ void simulate(int id, int n_particles,
 		int tth = 1;
 #endif
 		//@@printf("TARGET REGION 2 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
-                //@@printf("initial device = %d, number of devices = %d, default device = %d, number of teams = %d, number of threads = %d\n", h, t, omp_get_num_devices(), tth, ith);
+	        if (omp_get_team_num() == 0 && omp_get_thread_num() == 0) 
+                printf("initial device = %d, number of devices = %d, default device = %d, number of teams = %d, number of threads = %d\n", h, t, omp_get_num_devices(), tth, ith);
 
 		/**************************************************************************/
 		/* 4. Threads are spawned. One thread is dedicated for monitoring         */
@@ -248,6 +268,7 @@ void simulate(int id, int n_particles,
 		/*                                                                        */
 		/**************************************************************************/
 #ifndef GPU
+		omp_set_nested(1);
 #pragma omp parallel sections num_threads(2)
 #endif
 		{
@@ -286,7 +307,8 @@ void simulate(int id, int n_particles,
 						int ith = 1;
 						int tth = 1;
 #endif
-						//@@printf("PARALLEL REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+						if (omp_get_team_num() == 0 && omp_get_thread_num() == 0)
+						printf("PARALLEL REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 						simulate_fo_fixed(pq, sim);
 						//@@printf("AFTER simulate_fo_fixed\n"); 
 					}
@@ -382,7 +404,10 @@ void simulate(int id, int n_particles,
 		}
 
 	}  // End of target region
+	t2 += myseconds();
+	printf("Region 2 took %f s.\n", t2);
 
+	double t3 = -myseconds();
 #ifndef GPU
 #pragma omp parallel sections num_threads(2)
 #endif
@@ -442,6 +467,8 @@ void simulate(int id, int n_particles,
 			// end of target region
 		}
 	}
+	t3 += myseconds();
+	printf("Region 3 took %f s.\n", t3);
 
 		/**************************************************************************/
 		/* 7. Simulation data is deallocated except for data that is mapped back  */
