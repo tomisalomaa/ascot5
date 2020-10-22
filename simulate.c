@@ -28,8 +28,14 @@
 #include "simulate/mccc/mccc.h"
 #include "gctransform.h"
 
-#define NTEAMS 80 
-#define NTHREADS 40
+#ifdef GPU
+#define NTEAMS 224 
+#define NTHREADS 128
+#else
+#define NTEAMS 1 
+#define NTHREADS 32
+#endif
+
 
 #pragma omp declare target
 void sim_init(sim_data* sim, sim_offload_data* offload_data);
@@ -195,7 +201,6 @@ void simulate(int id, int n_particles,
 		/**************************************************************************/
 
 		pq->n = 0;
-		printf("pq->n = %d\n", pq->n);
 		pq_hybrid->n = 0;
 		for(int i = 0; i < n_particles; i++) {
 			if(p[i].endcond == 0) {

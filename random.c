@@ -9,7 +9,7 @@
 #include "random.h"
 
 #pragma omp declare target
-double drand48();
+//double drand48();
 #pragma omp end declare target
 
 void random_mkl_init(random_data* rdata, int seed) {
@@ -93,7 +93,7 @@ void random_drand48_uniform_simd(int n, double* r) {
     #pragma omp simd
 #endif
     for(int i = 0; i < n; i++) {
-        r[i] = drand48();
+        r[i] = 1;//drand48();
     }
 }
 
@@ -109,8 +109,8 @@ void random_drand48_normal_simd(int n, double* r) {
     for(int i = 0; i < n; i=i+2) {
         w = 2.0;
         while( w >= 1.0 ) {
-            x1 = 2*drand48()-1;
-            x2 = 2*drand48()-1;
+            x1 = 0.;//2*drand48()-1;
+            x2 = 0.;//2*drand48()-1;
             w = x1*x1 + x2*x2;
         }
 
@@ -127,8 +127,8 @@ void random_drand48_normal_simd(int n, double* r) {
     #pragma omp simd
 #endif
     for(int i = 0; i < n; i=i+2) {
-        x1 = drand48(rdata);
-        x2 = drand48(rdata);
+        x1 = 0.5;//drand48(rdata);
+        x2 = 0.5;//drand48(rdata);
         w = sqrt(-2*log(x1));
         s = cos(CONST_2PI*x2);
         r[i] = w*s;

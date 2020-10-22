@@ -182,8 +182,8 @@ real math_normal_rand(void) {
     real X;
     real v1, v2, s;
     do {
-        v1 = drand48() * 2 - 1;
-        v2 = drand48() * 2 - 1;
+        v1 = 1.;//drand48() * 2 - 1;
+        v2 = 1.;//drand48() * 2 - 1;
         s = v1*v1 + v2*v2;
     } while(s >= 1);
 

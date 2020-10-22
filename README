@@ -32,6 +32,9 @@ srun -n 1 --cpus-per-task=N ./ascot5_main --in=helloworld
 In order to run OpenMP on the GPU:
 srun --gres=gpu:1 ./ascot5_main --in=helloworld
 
+On marconi100, remember to bill the account:
+srun -A FUAC4_stellAsc -p m100_fua_prod --gres=gpu:1 -n 1 ./ascot5_main --in=/m100/home/userexternal/gfourest//Inputs/wall2dB3d500kmarkerx10
+
 === THREADING
 
 Set the number of teams and threads per team defining at the beginning of simulate.c

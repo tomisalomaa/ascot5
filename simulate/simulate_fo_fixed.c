@@ -64,6 +64,12 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim)
     int team_num =1;
 #endif
 
+    double inidt_t = 0.;
+    double copy_t  = 0.;
+    double fo_f_t  = 0.;
+    double all_t   = 0.;
+
+    all_t -= A5_WTIME;
 
     particle_simd_fo p;  // This array holds current states
     particle_simd_fo p0; // This array stores previous states
@@ -83,6 +89,7 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim)
     ///////////printf("=================== PASSED FO_FIXED 2.1 ===================== %d\n",p.id[0]);
 
     /* Determine simulation time-step */
+    inidt_t -= A5_WTIME;
 #ifdef SIMD
     #pragma omp simd
 #endif
@@ -91,6 +98,7 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim)
             hin[i] = simulate_fo_fixed_inidt(sim, &p, i);
         }
     }
+    inidt_t += A5_WTIME;
     //return;
 
     ///////////printf("=================== PASSED FO_FIXED 3 ===================== %d\n",p.id[0]);
@@ -114,9 +122,11 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim)
 #ifdef SIMD
         #pragma omp simd
 #endif
+	copy_t -= A5_WTIME;
         for(int i = 0; i < NSIMD; i++) {
             particle_copy_fo(&p, i, &p0, i);
         }
+	copy_t += A5_WTIME;
 
     //printf("=================== PASSED FO_FIXED 4 ===================== %f\n",p.rho[0]);
         /*************************** Physics **********************************/
@@ -189,8 +199,10 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim)
     //printf("=================== PASSED FO_FIXED 9 ===================== %f\n",p.rho[0]);
 
         /* Update running particles */
+	
         n_running = particle_cycle_fo(pq, &p, &sim->B_data, cycle);
     //printf("=================== PASSED FO_FIXED 10 =====================\n");
+            fo_f_t -= A5_WTIME;
 
         /* Determine simulation time-step for new particles */
 #ifdef SIMD
@@ -201,12 +213,20 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim)
                 hin[i] = simulate_fo_fixed_inidt(sim, &p, i);
             }
         }
+            fo_f_t += A5_WTIME;
     //printf("=================== PASSED FO_FIXED 11 =====================\n");
     // end of while
     }
+    all_t += A5_WTIME;
 
     /* All markers simulated! */
 
+#if 0
+	printf("%d %d: Inidt time = %f\n", omp_get_team_num(), omp_get_thread_num(), inidt_t);
+	printf("%d %d: Copy  time = %f\n", omp_get_team_num(), omp_get_thread_num(), copy_t);
+	printf("%d %d: fo_f  time = %f\n", omp_get_team_num(), omp_get_thread_num(), fo_f_t);
+#endif
+	printf("%d %d %f\n", omp_get_team_num(), omp_get_thread_num(), all_t);
 
 }
 
