@@ -119,10 +119,10 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim)
         //printf ("=================== N_RUNNING = %d, GPU, %d, %d, %d, %d N\n",n_running,nnnn,team_num,thread_num,p.id[0]);
         nnnn++;
         /* Store marker states */
+        copy_t -= A5_WTIME;
 #ifdef SIMD
         #pragma omp simd
 #endif
-	copy_t -= A5_WTIME;
         for(int i = 0; i < NSIMD; i++) {
             particle_copy_fo(&p, i, &p0, i);
         }
