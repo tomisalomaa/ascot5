@@ -109,8 +109,8 @@ void random_drand48_normal_simd(int n, double* r) {
     for(int i = 0; i < n; i=i+2) {
         w = 2.0;
         while( w >= 1.0 ) {
-            x1 = 0.;//2*drand48()-1;
-            x2 = 0.;//2*drand48()-1;
+            x1 = 0.5;//2*drand48()-1;
+            x2 = 0.5;//2*drand48()-1;
             w = x1*x1 + x2*x2;
         }
 
