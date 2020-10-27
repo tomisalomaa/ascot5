@@ -256,6 +256,19 @@ int main(int argc, char** argv) {
 
 printf("***** initial device = %d, default device = %d, number of devices = %d\n", h, t, nd);
 
+
+#ifdef MPI
+        // Pick the GPU assigned to us:
+        printf("Updating default device to the current MPI rank %d.\n", mpi_rank);
+	omp_set_default_device(mpi_rank);
+        h = omp_get_initial_device();
+        t = omp_get_default_device();
+        nd = omp_get_num_devices();
+	printf("+++++ initial device = %d, default device = %d, number of devices = %d\n", h, t, nd);
+
+#endif
+
+
     /* Set up particlestates on host, needs magnetic field evaluation */
     print_out0(VERBOSE_NORMAL, mpi_rank,
                "\nInitializing marker states.\n");
