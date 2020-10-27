@@ -80,6 +80,37 @@
 int read_arguments(int argc, char** argv, sim_offload_data* sim);
 void marker_summary(particle_state* p, int n);
 
+
+
+/**
+ *  @brief Get the MPI-RANK in the local intra-node communicator
+ *
+ *
+ */
+int mpi_get_intra_node_rank(){
+
+#ifdef MPI
+  MPI_Comm new_intranode_comm;
+  int err;
+  int mpi_intra_node_rank;
+
+  /* Split the global communicator to intranode communicators.*/
+  err =  MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0,
+			     MPI_INFO_NULL, &new_intranode_comm);
+
+  /* Get the rank in the intranode communicator */
+  err = MPI_Comm_rank(new_intranode_comm, &mpi_intra_node_rank);
+
+  return mpi_intra_node_rank;
+
+
+#else
+  return 0;
+#endif
+}
+
+
+
 /**
  * @brief Main function for ascot5_main
  *
@@ -253,14 +284,15 @@ int main(int argc, char** argv) {
         int h = omp_get_initial_device();
         int t = omp_get_default_device();
         int nd = omp_get_num_devices();
+	int mpi_rank_local = mpi_get_intra_node_rank();
 
 printf("***** initial device = %d, default device = %d, number of devices = %d\n", h, t, nd);
 
 
 #ifdef MPI
         // Pick the GPU assigned to us:
-        printf("Updating default device to the current MPI rank %d.\n", mpi_rank);
-	omp_set_default_device(mpi_rank);
+        printf("Updating default device to the current intra-node MPI rank %d.\n", mpi_rank_local);
+	omp_set_default_device(mpi_rank_local);
         h = omp_get_initial_device();
         t = omp_get_default_device();
         nd = omp_get_num_devices();
