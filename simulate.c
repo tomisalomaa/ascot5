@@ -230,7 +230,7 @@ void simulate(int id, int n_particles,
 		}
 		pq->next = 0;
 
-		random_init(&sim.random_data, 0);
+		random_init(&sim->random_data, 0);
 
 #ifdef _OPENMP
 		print_out(VERBOSE_NORMAL,"%s: All fields initialized. Simulation begins, %d threads.\n",
