@@ -67,7 +67,11 @@
 
 /** This is used to tell the compiler that we want a variable aligned to
  * 64 bits for Xeon Phi; may not be always necessary */
+#ifndef GPU
 #define __memalign__ __attribute__((aligned(64)))
+#else
+#define __memalign__
+#endif
 
 /** We use a custom type real to represent floating point numbers; precision
  * can be defined compile-time. */

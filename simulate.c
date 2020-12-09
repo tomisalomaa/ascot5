@@ -29,7 +29,7 @@
 #include "gctransform.h"
 
 #ifdef GPU
-#define NTEAMS 224 
+#define NTEAMS 80
 #define NTHREADS 128
 #else
 #define NTEAMS 1 
@@ -119,7 +119,6 @@ void simulate(int id, int n_particles,
 	sim       = (sim_data*)       omp_target_alloc(sizeof(sim_data),      omp_get_default_device());
 	pq        = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
 	pq_hybrid = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
-	//printf("sim  = %p\n", sim);
 	//printf("pq   = %p, n = %d\n", pq, pq->n);
 	//printf("pq_h = %p\n", pq_hybrid);
 #else
@@ -134,7 +133,8 @@ void simulate(int id, int n_particles,
         int dev = t; // t for the GPU h for the CPU
 	double t1 = -myseconds();
 
-#pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid) //device(dev)
+//#pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid) //device(dev)
+#pragma omp target is_device_ptr(sim, pq, pq_hybrid) //device(dev)
 	{
 
 #ifdef _OPENMP
@@ -253,6 +253,7 @@ void simulate(int id, int n_particles,
 #pragma omp target teams is_device_ptr(sim, pq, pq_hybrid)
 #else
 //#pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
+//#pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
 #pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
 #endif
 	{
@@ -299,11 +300,10 @@ void simulate(int id, int n_particles,
 						simulate_gc_fixed(pq, sim);
 					}
 				}
-				else 
+				else  
 				if(pq->n > 0 && sim->sim_mode == simulate_mode_fo) {
 
 					//@@printf("Calling simulate_fo_fixed\n"); 
-#pragma omp parallel
 					{
 #ifdef _OPENMP
 						int ith = omp_get_num_threads();
