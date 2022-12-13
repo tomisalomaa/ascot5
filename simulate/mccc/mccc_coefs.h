@@ -194,7 +194,6 @@
         ( 0.5 * ( Dpara - Dperp ) * ( 1 - xi*xi ) + Dperp )      \
         / (gyrofreq*gyrofreq) )
 
-#pragma omp declare target
 
 /**
  * @brief Evaluate Coulomb logarithm.
@@ -218,6 +217,7 @@
 #ifdef SIMD
 #pragma omp declare simd uniform(nspec, mb, qb, nb, Tb)
 #endif
+DECLARE_TARGET
 static void mccc_coefs_clog(real* clogab, real ma, real qa, real va, int nspec,
                             const real* mb, const real* qb, const real* nb,
                             const real* Tb) {
@@ -245,6 +245,7 @@ static void mccc_coefs_clog(real* clogab, real ma, real qa, real va, int nspec,
         }
     }
 }
+DECLARE_TARGET_END
 
 /**
  * @brief Evaluate special functions needed by collision coefficients
@@ -266,6 +267,7 @@ static void mccc_coefs_clog(real* clogab, real ma, real qa, real va, int nspec,
 #ifdef SIMD
 #pragma omp declare simd uniform(mdata)
 #endif
+DECLARE_TARGET
 static void mccc_coefs_mufun(real mufun[3], real x, mccc_data* mdata) {
 
 #ifdef FULLMCC
@@ -290,6 +292,6 @@ static void mccc_coefs_mufun(real mufun[3], real x, mccc_data* mdata) {
 #endif
 }
 
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 #endif

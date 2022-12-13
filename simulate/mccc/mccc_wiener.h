@@ -36,20 +36,23 @@ typedef struct {
                                              process values                   */
 } mccc_wienarr;
 
-#pragma omp declare target
+DECLARE_TARGET
 #ifdef SIMD
 #pragma omp declare simd
 #endif
 void mccc_wiener_initialize(mccc_wienarr* w, real initime);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd
 #endif
+DECLARE_TARGET
 a5err mccc_wiener_generate(mccc_wienarr* w, real t, int* windex, real* rand5);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd
 #endif
+DECLARE_TARGET
 a5err mccc_wiener_clean(mccc_wienarr* w, real t);
-
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 #endif

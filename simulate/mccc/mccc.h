@@ -31,22 +31,30 @@ typedef struct {
     int include_gcdiff; /**< Let collisions change guiding center position */
 } mccc_data;
 
-#pragma omp declare target
+DECLARE_TARGET
 
 void mccc_init(mccc_data* mdata, int include_energy, int include_pitch,
                int include_gcdiff);
+DECLARE_TARGET_END
+DECLARE_TARGET
 int mccc_eval_coefs(real ma, real qa, real r, real phi, real z, real t,
                     real* va, int nv, plasma_data* pdata, B_field_data* Bdata,
                     real* F, real* Dpara, real* Dperp, real* K, real* nu,
                     real* Q, real* dQ, real* dDpara, real* clog, real* mu0,
                     real* mu1, real* dmu0);
+DECLARE_TARGET_END
+DECLARE_TARGET
 void mccc_fo_euler(particle_simd_fo* p, real* h, B_field_data* Bdata,
                    plasma_data* pdata, random_data* rdata, mccc_data* mdata);
+DECLARE_TARGET_END
+DECLARE_TARGET
 void mccc_gc_euler(particle_simd_gc* p, real* h, B_field_data* Bdata,
                    plasma_data* pdata, random_data* rdata, mccc_data* mdata);
+DECLARE_TARGET_END
+DECLARE_TARGET
 void mccc_gc_milstein(particle_simd_gc* p, real* hin, real* hout, real tol,
                       mccc_wienarr* wienarr, B_field_data* Bdata,
                       plasma_data* pdata, random_data* rdata, mccc_data* mdata);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 #endif
