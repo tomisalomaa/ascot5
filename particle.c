@@ -810,6 +810,8 @@ void particle_input_to_state(input_particle* p, particle_state* ps,
  * @param j index where in the SIMD structure marker is stored
  * @param Bdata pointer to magnetic field data
  */
+#if 0
+inline
 a5err particle_state_to_fo(particle_state* p, int i, particle_simd_fo* p_fo,
                            int j, B_field_data* Bdata) {
     a5err err = p->err;
@@ -876,6 +878,7 @@ a5err particle_state_to_fo(particle_state* p, int i, particle_simd_fo* p_fo,
 
     return err;
 }
+#endif
 
 /**
  * @brief Convert FO to state
@@ -1429,6 +1432,8 @@ int particle_fo_to_gc(particle_simd_fo* p_fo, int j, particle_simd_gc* p_gc,
     return err > 0;
 }
 
+#if 0
+inline
 void particle_copy_fo(particle_simd_fo* p1, int i, particle_simd_fo* p2, int j) {
         p2->r[j]          = p1->r[i];
         p2->phi[j]        = p1->phi[i];
@@ -1469,6 +1474,7 @@ void particle_copy_fo(particle_simd_fo* p1, int i, particle_simd_fo* p2, int j) 
         p2->B_z_dphi[j]   = p1->B_z_dphi[i];
         p2->B_z_dz[j]     = p1->B_z_dz[i];
 }
+#endif
 
 void particle_copy_gc(particle_simd_gc* p1, int i, particle_simd_gc* p2, int j) {
     p2->r[j]          = p1->r[i];

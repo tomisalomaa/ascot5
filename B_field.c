@@ -200,6 +200,7 @@ int B_field_init(B_field_data* Bdata, B_field_offload_data* offload_data,
  *
  * @return Non-zero a5err value if evaluation failed, zero otherwise
  */
+#if 0
 a5err B_field_eval_psi(real* psi, real r, real phi, real z, real t,
                       B_field_data* Bdata) {
     a5err err = 0;
@@ -239,7 +240,7 @@ a5err B_field_eval_psi(real* psi, real r, real phi, real z, real t,
 
     return err;
 }
-
+#endif
 /**
  * @brief Evaluate poloidal flux psi and its derivatives
  *
@@ -326,6 +327,7 @@ a5err B_field_eval_psi_dpsi(real psi_dpsi[4], real r, real phi, real z, real t,
  *
  * @return Non-zero a5err value if evaluation failed, zero otherwise
  */
+#if 0
 a5err B_field_eval_rho(real* rho, real psi, B_field_data* Bdata) {
     a5err err = 0;
 
@@ -364,7 +366,7 @@ a5err B_field_eval_rho(real* rho, real psi, B_field_data* Bdata) {
 
     return err;
 }
-
+#endif
 /**
  * @brief Evaluate normalized poloidal flux rho and its derivatives
  *
@@ -456,6 +458,7 @@ a5err B_field_eval_rho_drho(real rho_drho[4], real r, real phi, real z,
  *
  * @return Non-zero a5err value if evaluation failed, zero otherwise
  */
+#if 0
 a5err B_field_eval_B(real B[3], real r, real phi, real z, real t,
                      B_field_data* Bdata) {
     a5err err = 0;
@@ -496,7 +499,7 @@ a5err B_field_eval_B(real B[3], real r, real phi, real z, real t,
 
     return err;
 }
-
+#endif
 /**
  * @brief Evaluate magnetic field and its derivatives
  *
@@ -531,6 +534,7 @@ a5err B_field_eval_B(real B[3], real r, real phi, real z, real t,
  *
  * @return Non-zero a5err value if evaluation failed, zero otherwise
  */
+#if 0
 a5err B_field_eval_B_dB(real B_dB[15], real r, real phi, real z, real t,
                         B_field_data* Bdata) {
     a5err err = 0;
@@ -571,7 +575,7 @@ a5err B_field_eval_B_dB(real B_dB[15], real r, real phi, real z, real t,
 
     return err;
 }
-
+#endif
 /**
  * @brief Return magnetic axis R-coordinate
  *
@@ -582,6 +586,7 @@ a5err B_field_eval_B_dB(real B_dB[15], real r, real phi, real z, real t,
  *
  * @return Magnetic axis R-coordinate [m]
  */
+#if 0
 real B_field_get_axis_r(B_field_data* Bdata, real phi) {
     a5err err = 0;
     real axis_r = 0;
@@ -659,3 +664,4 @@ real B_field_get_axis_z(B_field_data* Bdata, real phi) {
 
     return axis_z;
 }
+#endif

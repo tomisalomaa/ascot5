@@ -84,6 +84,8 @@ void endcond_check_fo(particle_simd_fo* p_f, particle_simd_fo* p_i,
 #ifdef SIMD
     #pragma omp simd
 #endif
+    //#pragma omp parallel for simd
+OMP_L2
     for(int i = 0; i < NSIMD; i++) {
         if(p_f->running[i]) {
 

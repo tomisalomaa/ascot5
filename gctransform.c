@@ -38,10 +38,17 @@
 #include "physlib.h"
 #include "gctransform.h"
 
-#pragma omp declare target
+#ifdef _OPENMP
+DECLARE_TARGET
+#endif
 /** Order to which guiding center transformation is done in velocity space. */
 static int GCTRANSFORM_ORDER = 1;
-#pragma omp end declare target
+#ifdef _OPENMP
+DECLARE_TARGET_END
+#endif
+#ifdef _OPENACC
+#pragma acc declare copyin(GCTRANSFORM_ORDER)
+#endif
 
 /**
  * @brief Set the order of the transformation.
@@ -51,7 +58,6 @@ static int GCTRANSFORM_ORDER = 1;
 void gctransform_setorder(int order) {
     GCTRANSFORM_ORDER = order;
 }
-
 /**
  * @brief Transform particle to guiding center  phase space
  *
@@ -286,7 +292,6 @@ void gctransform_particle2guidingcenter(
     /* zeta is defined to be in interval [0, 2pi] */
     *zeta = fmod(CONST_2PI + (*zeta), CONST_2PI);
 }
-
 /**
  * @brief Transform guiding center to particle phase space
  *

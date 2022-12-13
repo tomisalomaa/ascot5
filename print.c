@@ -11,13 +11,13 @@ const char VERBOSE_LEVEL = VERBOSE;
 
 /*
 #ifdef GPU
-#pragma omp declare target
+DECLARE_TARGET
 int print(const char *format,...)
 {
 
 return 0;
 
 }
-#pragma omp end declare target
+DECLARE_TARGET_END
 #endif
 */

@@ -14,6 +14,7 @@
 #define _XOPEN_SOURCE
 #include <string.h>
 #include <unistd.h>
+#include <openacc.h>
 #include "endcond.h"
 #include "offload.h"
 #include "particle.h"
@@ -27,20 +28,23 @@
 #include "simulate/simulate_fo_fixed.h"
 #include "simulate/mccc/mccc.h"
 #include "gctransform.h"
+#include "offload_acc_omp.h"
 
 #ifdef GPU
-#define NTEAMS 80
-#define NTHREADS 128
+#define NTEAMS 32
+#define NTHREADS 16
 #else
 #define NTEAMS 1 
-#define NTHREADS 32
+#define NTHREADS 64
 #endif
 
 
-#pragma omp declare target
+DECLARE_TARGET
 void sim_init(sim_data* sim, sim_offload_data* offload_data);
+DECLARE_TARGET_END
+DECLARE_TARGET
 void sim_monitor(char* filename, volatile int* n, volatile int* finished);
-#pragma omp end declare target
+DECLARE_TARGET_END
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -115,37 +119,76 @@ void simulate(int id, int n_particles,
 	sim_data       *sim;
 	particle_queue *pq;
 	particle_queue *pq_hybrid;
+	printf("**** COUCOU0 ****\n");
 #ifdef GPU
+#ifdef _OPENMP
 	sim       = (sim_data*)       omp_target_alloc(sizeof(sim_data),      omp_get_default_device());
 	pq        = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
 	pq_hybrid = (particle_queue*) omp_target_alloc(sizeof(particle_queue),omp_get_default_device());
-	//printf("pq   = %p, n = %d\n", pq, pq->n);
-	//printf("pq_h = %p\n", pq_hybrid);
+#endif
+#ifdef _OPENACC
+	sim       = (sim_data*)       malloc(sizeof(sim_data));
+	pq        = (particle_queue*) malloc(sizeof(particle_queue));
+	pq_hybrid = (particle_queue*) malloc(sizeof(particle_queue));
+	printf("**** COUCOU1 ****\n");
+	
+//#pragma acc enter data copyin(sim[0:1],pq[0:1],pq_hybrid[0:1])
+//#pragma acc enter data copyin(sim[0:1])	
+//#pragma acc enter data copyin(sim->sim_mode)	
+//#pragma acc enter data copyin(offload_data[0:1],p[0:n_particles],	\
+//			      offload_array[0:(*offload_data).offload_array_length], \
+//			      diag_offload_array[0:(*sim_offload).diag_offload_data.offload_array_length], \
+//			      sim_offload[0:1] )
+//#pragma acc enter data copyin(sim_offload->sim_mode)	
+
+	//	exit(0);
+	//sim       = (sim_data*)       acc_malloc(sizeof(sim_data));
+	//pq        = (particle_queue*) acc_malloc(sizeof(particle_queue));
+	//pq_hybrid = (particle_queue*) acc_malloc(sizeof(particle_queue));
+	printf("**** COUCOU2 ****\n");
+#endif
+	printf("pq_h = %p %p %p\n", pq_hybrid, sim, pq);
 #else
 	sim       = (sim_data*)       malloc(sizeof(sim_data));
 	pq        = (particle_queue*) malloc(sizeof(particle_queue));
 	pq_hybrid = (particle_queue*) malloc(sizeof(particle_queue));
 #endif
 	//
+#ifdef _OPENMP
         int h = omp_get_initial_device();
         int t = omp_get_default_device();
         //
-        int dev = t; // t for the GPU h for the CPU
+	int dev = t; // t for the GPU h for the CPU
+#endif
 	double t1 = -myseconds();
 
 //#pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid) //device(dev)
+
+#ifdef _OPENACC
+#pragma acc data copy(sim[0:1],sim_offload[0:1],pq[0:1],pq_hybrid[0:1],offload_data[0:1],p[0:n_particles],offload_array[0:(*offload_data).offload_array_length],diag_offload_array[0:(*sim_offload).diag_offload_data.offload_array_length]) //deviceptr(sim, pq, pq_hybrid) //copy(sim[0:1], pq[0:1], pq_hybrid[0:1]) //deviceptr(sim, pq, pq_hybrid) //device(dev)
+	{
+#endif
+
+#ifdef _OPENMP
 #pragma omp target is_device_ptr(sim, pq, pq_hybrid) //device(dev)
+#endif
+#ifdef _OPENACC
+#pragma acc serial 
+#endif
 	{
 
 #ifdef _OPENMP
+#pragma omp master
+{
 		int ith = omp_get_num_threads();
 		int tth = omp_get_num_teams();
+}
 #else
 		int ith = 1;
 		int tth = 1;
 #endif
 		//
-                //@@printf("initial device = %d, number of devices = %d, default device = %d, number of teams = %d, number of threads = %d\n", h, t, omp_get_num_devices(), ith, tth);
+                //printf("**** initial device = %d, number of devices = %d, default device = %d, max number of teams = %d, max number of threads = %d\n", h, t, omp_get_num_devices(), NTEAMS, NTHREADS);
 		//
 		//@@printf("TARGET REGION 1 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 		//
@@ -163,7 +206,7 @@ void simulate(int id, int n_particles,
 		/*    respective init functions.                                          */
 		/*                                                                        */
 		/**************************************************************************/
-
+		sim->sim_mode = sim_offload->sim_mode;
 		sim_init(sim, sim_offload);
 
 		real* ptr;
@@ -236,12 +279,13 @@ void simulate(int id, int n_particles,
 		print_out(VERBOSE_NORMAL,"%s: All fields initialized. Simulation begins, %d threads.\n",
 				targetname, omp_get_max_threads());
 #else
-		print_out(VERBOSE_NORMAL,"%s: All fields initialized. Simulation begins, NO THREADS.\n",
-				targetname);
+		//		print_out(VERBOSE_NORMAL,"%s: All fields initialized. Simulation begins, NO THREADS.\n",
+		//				targetname);
 #endif
 
 		// end of first target region
 	}
+	printf("COUCOU3");
 	t1 += myseconds();
 	printf("Region 1 took %f s.\n", t1);
 	//printf("n = %d\n", pq->n);
@@ -249,25 +293,32 @@ void simulate(int id, int n_particles,
 	//exit(0);
 
 	double t2 = -myseconds();
-#if NTEAMS == 0
+//#pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
+//#pragma omp target teams thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
+#ifdef _OPENMP
 #pragma omp target teams is_device_ptr(sim, pq, pq_hybrid)
-#else
+#elif _OPENACC
+#pragma acc parallel  
+//#pragma acc kernels deviceptr(sim, pq, pq_hybrid)
 //#pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
-//#pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
-#pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
 #endif
 	{
 #ifdef _OPENMP
+#if 0
+#pragma omp master
+{
 		int ith = omp_get_num_threads();
 		int tth = omp_get_num_teams();
+	        //if (omp_get_team_num() == 0 && omp_get_thread_num() == 0) 
+                printf("initial device = %d, number of devices = %d, default device = %d, number of teams = %d, number of threads = %d\n", h, t, omp_get_num_devices(), tth, ith);
+
+}
+#endif
 #else
 		int ith = 1;
 		int tth = 1;
 #endif
 		//@@printf("TARGET REGION 2 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
-	        if (omp_get_team_num() == 0 && omp_get_thread_num() == 0) 
-                printf("initial device = %d, number of devices = %d, default device = %d, number of teams = %d, number of threads = %d\n", h, t, omp_get_num_devices(), tth, ith);
-
 		/**************************************************************************/
 		/* 4. Threads are spawned. One thread is dedicated for monitoring         */
 		/*    progress, if monitoring is active.                                  */
@@ -291,12 +342,16 @@ void simulate(int id, int n_particles,
 							|| sim->sim_mode == simulate_mode_hybrid)) {
 					if(sim->enable_ada) {
 						//@@printf("Calling simulate_gc_adaptive\n"); 
+#ifdef _OPENMP
 #pragma omp parallel
+#endif
 						simulate_gc_adaptive(pq, sim);
 					}
 					else {
 						//@@printf("Calling simulate_gc_fixed\n"); 
+#ifdef _OPENMP
 #pragma omp parallel
+#endif
 						simulate_gc_fixed(pq, sim);
 					}
 				}
@@ -305,6 +360,7 @@ void simulate(int id, int n_particles,
 
 					//@@printf("Calling simulate_fo_fixed\n"); 
 					{
+#if 0
 #ifdef _OPENMP
 						int ith = omp_get_num_threads();
 						int tth = omp_get_num_teams();
@@ -313,7 +369,8 @@ void simulate(int id, int n_particles,
 						int tth = 1;
 #endif
 						if (omp_get_team_num() == 0 && omp_get_thread_num() == 0)
-						printf("PARALLEL REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+						printf("IN TEAMS    REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
+#endif
 						simulate_fo_fixed(pq, sim);
 						//@@printf("AFTER simulate_fo_fixed\n"); 
 					}
@@ -323,7 +380,9 @@ void simulate(int id, int n_particles,
 				if(pq->n > 0 && sim->sim_mode == simulate_mode_ml) {
 
 					//@@printf("Calling simulate_ml_adaptive\n"); 
+#ifdef _OPENMP
 #pragma omp parallel
+#endif
 					simulate_ml_adaptive(pq, sim);
 				}
 #endif
@@ -357,7 +416,13 @@ void simulate(int id, int n_particles,
 	/*    progress is monitored as previously.                                */
 	/*                                                                        */
 	/**************************************************************************/
+	printf("COUCOU5\n");
+#ifdef _OPENMP
 #pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
+#elif _OPENACC
+//#pragma acc kernel teams num_gangs(1) num_workers(1) deviceptr(sim, pq, pq_hybrid)
+#pragma acc parallel
+#endif
 	{
 		int n_new = 0;
 		if(sim->sim_mode == simulate_mode_hybrid) {
@@ -411,7 +476,9 @@ void simulate(int id, int n_particles,
 	}  // End of target region
 	t2 += myseconds();
 	printf("Region 2 took %f s.\n", t2);
-
+//	printf("JE FORCE EXIT\n");
+//	exit(0);
+	
 	double t3 = -myseconds();
 #ifndef GPU
 #pragma omp parallel sections num_threads(2)
@@ -420,13 +487,16 @@ void simulate(int id, int n_particles,
 #ifndef GPU
 #pragma omp section
 #endif
-
-#if NTEAMS == 0
-#pragma omp target teams is_device_ptr(sim, pq, pq_hybrid)
-#else
+//#if NTEAMS == 0
+//#pragma omp target teams is_device_ptr(sim, pq, pq_hybrid)
+//#else
+#ifdef _OPENMP
 #pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
+#elif _OPENACC
+#pragma acc parallel 
 #endif
 		{
+#if 1
 #ifdef _OPENMP
 			int ith = omp_get_num_threads();
 			int tth = omp_get_num_teams();
@@ -434,18 +504,14 @@ void simulate(int id, int n_particles,
 			int ith = 1;
 			int tth =1;
 #endif
+#endif
 
 			//@@printf("TARGET REGION 4 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 			{
+				//printf("PARALLEL REGION 5 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 #ifdef _OPENMP
-				int ith = omp_get_num_threads();
-				int tth = omp_get_num_teams();
-#else
-				int ith = 1;
-				int tth =1;
-#endif
-				//@@printf("PARALLEL REGION 5 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth,ith);
 #pragma omp parallel
+#endif
 				simulate_fo_fixed(pq_hybrid, sim);
 			}
 
@@ -474,19 +540,22 @@ void simulate(int id, int n_particles,
 	}
 	t3 += myseconds();
 	printf("Region 3 took %f s.\n", t3);
-
+#ifdef _OPENACC
+	}
+#endif
 		/**************************************************************************/
 		/* 7. Simulation data is deallocated except for data that is mapped back  */
 		/*    to host.                                                            */
 		/*                                                                        */
 		/**************************************************************************/
+#ifdef _OPENMP
 #pragma omp target teams num_teams(1) thread_limit(1) is_device_ptr(sim, pq, pq_hybrid)
 		{
 			free(pq->p);
 			free(pq_hybrid->p);
 			diag_free(&sim->diag_data);
 		}
-
+#endif
 
 
 	/**************************************************************************/

@@ -8,9 +8,9 @@
 #include "ascot5.h"
 #include "math.h"
 
-#pragma omp declare target
+DECLARE_TARGET
 double drand48();
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 double math_simpson_helper(double (*f)(double), double a, double b, double eps,
                            double S, double fa, double fb, double fc,
@@ -149,6 +149,7 @@ void math_jac_xyz2rpz(real* xyz, real* rpz, real r, real phi) {
  * @param d3   input scalar dimension (rows in matB and matC)
  * @param matC output array representing a d1 x d3 matrix
  */
+#if 0
 void math_matmul(real* matA, real* matB, int d1, int d2, int d3, real* matC) {
     real sum;
     for (int i = 0; i < d1; i=i+1) {
@@ -161,7 +162,7 @@ void math_matmul(real* matA, real* matB, int d1, int d2, int d3, real* matC) {
         }
     }
 }
-
+#endif
 /**
  * @brief Generate normally distributed random numbers
  *
@@ -370,6 +371,7 @@ int math_point_in_polygon(real r, real z, real* rv, real* zv, int n) {
     return hits % 2;
 }
 
+#if 1
 /**
  * @brief Helper routine for "math_simpson"
  */
@@ -385,6 +387,7 @@ double math_simpson_helper(double (*f)(double), double a, double b, double eps,
     if (bottom <= 0 || fabs(S2 - S) <= eps*fabs(S)) {
         return  S2 + (S2 - S)/15;
     }
-    return math_simpson_helper(f, a, c, eps, Sleft,  fa, fc, fd, bottom-1)
-        +math_simpson_helper(f, c, b, eps, Sright, fc, fb, fe, bottom-1);
+    //return math_simpson_helper(f, a, c, eps, Sleft,  fa, fc, fd, bottom-1)
+    //    +math_simpson_helper(f, c, b, eps, Sright, fc, fb, fe, bottom-1);
 }
+#endif

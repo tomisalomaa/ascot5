@@ -8,9 +8,9 @@
 #include <mkl_vsl.h>
 #include "random.h"
 
-#pragma omp declare target
+DECLARE_TARGET
 //double drand48();
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 void random_mkl_init(random_data* rdata, int seed) {
     vslNewStream(&rdata->r, RANDOM_MKL_RNG, seed);

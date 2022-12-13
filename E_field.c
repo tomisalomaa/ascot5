@@ -163,6 +163,7 @@ int E_field_init(E_field_data* Edata, E_field_offload_data* offload_data,
  *
  * @return Non-zero a5err value if evaluation failed, zero otherwise
  */
+#if 0
 a5err E_field_eval_E(real E[3], real r, real phi, real z, real t,
                      E_field_data* Edata, B_field_data* Bdata) {
     a5err err = 0;
@@ -185,3 +186,4 @@ a5err E_field_eval_E(real E[3], real r, real phi, real z, real t,
 
     return err;
 }
+#endif

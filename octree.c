@@ -44,8 +44,12 @@
  *        be a leaf node. Final volume will be 1/8^(depth-1) th of the initial
  *        volume.
  */
+#if 1
 void octree_create(octree_node** node, real x_min, real x_max, real y_min,
                    real y_max, real z_min, real z_max, int depth) {
+	printf("******** depth = %d\n", depth);
+	return;
+#if 0
     octree_node* n = (octree_node*) malloc(sizeof(octree_node));
     (*node) = n;
     real epsilon = 1e-6;
@@ -81,6 +85,7 @@ void octree_create(octree_node** node, real x_min, real x_max, real y_min,
         n->n111 = NULL;
         list_int_create(&(n->list));
     }
+#endif
 }
 
 /**
@@ -91,6 +96,8 @@ void octree_create(octree_node** node, real x_min, real x_max, real y_min,
  * @param node pointer to octree node
  */
 void octree_free(octree_node** node) {
+	return;
+#if 0
     if((*node)->n000 != NULL) {
         octree_free( &((*node)->n000) );
         octree_free( &((*node)->n100) );
@@ -106,6 +113,7 @@ void octree_free(octree_node** node) {
     }
     free(*node);
     *node = NULL;
+#endif
 }
 
 /**
@@ -123,6 +131,8 @@ void octree_free(octree_node** node) {
  * @param id triangle id which is stored in the node(s) the triangle belongs to
  */
 void octree_add(octree_node* node, real t1[3], real t2[3], real t3[3], int id) {
+	return;
+#if 0
     if(node->n000 == NULL) {
         /* leaf node, add the triangle to the list */
         list_int_add(node->list, id);
@@ -145,6 +155,7 @@ void octree_add(octree_node* node, real t1[3], real t2[3], real t3[3], int id) {
         if(wall_3d_tri_in_cube(t1, t2, t3, node->n111->bb1, node->n111->bb2)>0)
             octree_add(node->n111, t1, t2, t3, id);
     }
+#endif
 }
 
 /**
@@ -164,6 +175,8 @@ void octree_add(octree_node* node, real t1[3], real t2[3], real t3[3], int id) {
  * @return linked list of the leaf node given point belongs to
  */
 list_int_node* octree_get(octree_node* node, real p[3]) {
+	return NULL;
+#if 0
     if(node->n000 == NULL) {
         return node->list;
     }
@@ -193,4 +206,6 @@ list_int_node* octree_get(octree_node* node, real p[3]) {
     /* We should not ever get here but this
        supresses compiler warnings. */
     return NULL;
+#endif
 }
+#endif

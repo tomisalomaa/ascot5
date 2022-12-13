@@ -194,6 +194,7 @@ int main(int argc, char** argv) {
     real* neutral_offload_array;
     real* wall_offload_array;
 
+    printf("IN THE MAIN \n");
     /* Read input from the HDF5 file */
     if( hdf5_interface_read_input(&sim,
                                   hdf5_input_options | hdf5_input_bfield |
@@ -286,7 +287,7 @@ int main(int argc, char** argv) {
         int nd = omp_get_num_devices();
 	int mpi_rank_local = mpi_get_intra_node_rank();
 
-printf("***** initial device = %d, default device = %d, number of devices = %d\n", h, t, nd);
+	printf("***** initial device = %d, default device = %d, number of devices = %d, NSIMD = %d\n", h, t, nd, NSIMD);
 
 
 #ifdef MPI
@@ -377,6 +378,7 @@ printf("***** initial device = %d, default device = %d, number of devices = %d\n
  * Offloading is only emulated. */
 #ifdef GPU
 #warning "Offloading on the GPU"
+#ifdef _OPENMP
 #pragma omp target data map( \
 		offload_data, \
                 ps[0:n], \
@@ -384,11 +386,13 @@ printf("***** initial device = %d, default device = %d, number of devices = %d\n
                 diag_offload_array_host[0:sim.diag_offload_data.offload_array_length], \
                 sim ) device(t)
 #endif
+#endif
         {
+#ifdef _OPENMP
         int h = omp_get_initial_device();
         int t = omp_get_default_device();
         int nd = omp_get_num_devices();
-
+#endif
 	printf("***** initial device = %d, default device = %d, number of devices = %d\n", h, t, nd);
             host_start = A5_WTIME;
             simulate(0, n_host, ps, &sim, &offload_data, offload_array, diag_offload_array_host);
