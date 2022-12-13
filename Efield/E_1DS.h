@@ -33,13 +33,15 @@ typedef struct {
 int E_1DS_init_offload(E_1DS_offload_data* offload_data, real** offload_array);
 void E_1DS_free_offload(E_1DS_offload_data* offload_data, real** offload_array);
 
-#pragma omp declare target
+DECLARE_TARGET
 void E_1DS_init(E_1DS_data* Edata, E_1DS_offload_data* offload_data,
                 real* offload_array);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(Edata,Bdata)
 #endif
+DECLARE_TARGET
 a5err E_1DS_eval_E(real E[3], real r, real phi, real z, E_1DS_data* Edata,
                    B_field_data* Bdata);
-#pragma omp end declare target
+DECLARE_TARGET_END
 #endif

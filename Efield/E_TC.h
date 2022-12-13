@@ -10,7 +10,7 @@
 #include "../ascot5.h"
 #include "../error.h"
 #include "../B_field.h"
-
+#include "../math.h"
 /**
  * @brief Trivial Cartesian electric field offload data
  */
@@ -33,13 +33,19 @@ int E_TC_init_offload(E_TC_offload_data* offload_data,
 void E_TC_free_offload(E_TC_offload_data* offload_data,
                        real** offload_array);
 
-#pragma omp declare target
+DECLARE_TARGET
 void E_TC_init(E_TC_data* Edata, E_TC_offload_data* offload_data,
                   real* offload_array);
 #ifdef SIMD
 #pragma omp declare simd uniform(Edata,Bdata)
 #endif
+inline
+__attribute__((always_inline))
 a5err E_TC_eval_E(real E[3], real r, real phi, real z, E_TC_data* Edata,
-                  B_field_data* Bdata);
-#pragma omp end declare target
+                  B_field_data* Bdata){
+    math_vec_xyz2rpz(Edata->Exyz, E, phi);
+
+    return 0;
+}//;
+DECLARE_TARGET_END
 #endif
