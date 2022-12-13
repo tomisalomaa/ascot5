@@ -24,12 +24,18 @@
 #include "mccc/mccc.h"
 #include "mccc/mccc_wiener.h"
 
-#pragma omp declare target
+//DECLARE_TARGET
 #ifdef SIMD
 #pragma omp declare simd uniform(sim)
 #endif
+#ifdef DECLARE_TARGET
+DECLARE_TARGET
+#endif
+#warning DECLARE_TARGET
+//#pragma acc routine seq
 real simulate_gc_adaptive_inidt(sim_data* sim, particle_simd_gc* p, int i);
-#pragma omp end declare target
+DECLARE_TARGET_END
+//DECLARE_TARGET_END
 
 #define DUMMY_TIMESTEP_VAL 1.0 /**< Dummy time step value */
 
@@ -98,7 +104,7 @@ void simulate_gc_adaptive(particle_queue* pq, sim_data* sim) {
         }
     }
 
-    cputime_last = A5_WTIME;
+    //cputime_last = A5_WTIME;
 
     /* MAIN SIMULATION LOOP
      * - Store current state
@@ -163,7 +169,7 @@ void simulate_gc_adaptive(particle_queue* pq, sim_data* sim) {
 
         /**********************************************************************/
 
-        cputime = A5_WTIME;
+        //cputime = A5_WTIME;
 #ifdef SIMD
         #pragma omp simd
 #endif

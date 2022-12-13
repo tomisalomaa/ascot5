@@ -20,12 +20,12 @@
 #include "../math.h"
 #include "../consts.h"
 
-#pragma omp declare target
+DECLARE_TARGET
 #ifdef SIMD
 #pragma omp declare simd uniform(sim)
 #endif
 real simulate_ml_adaptive_inidt(sim_data* sim, particle_simd_ml* p, int i);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 
 #define MAGNETIC_FIELD_LINE_INISTEP 1.0e-2 /**< Initial step size in meters   */
@@ -87,7 +87,7 @@ void simulate_ml_adaptive(particle_queue* pq, sim_data* sim) {
         }
     }
 
-    cputime_last = A5_WTIME;
+    //cputime_last = A5_WTIME;
 
     /* MAIN SIMULATION LOOP
      * - Store current state
@@ -133,7 +133,7 @@ void simulate_ml_adaptive(particle_queue* pq, sim_data* sim) {
         /**********************************************************************/
 
 
-        cputime = A5_WTIME;
+        //cputime = A5_WTIME;
 #ifdef SIMD
         #pragma omp simd
 #endif

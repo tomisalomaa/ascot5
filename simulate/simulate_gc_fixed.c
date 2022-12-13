@@ -22,12 +22,12 @@
 #include "step/step_gc_rk4.h"
 #include "mccc/mccc.h"
 
-#pragma omp declare target
+DECLARE_TARGET
 #ifdef SIMD
 #pragma omp declare simd uniform(sim)
 #endif
 real simulate_gc_fixed_inidt(sim_data* sim, particle_simd_gc* p, int i);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 /**
  * @brief Simulates guiding centers using fixed time-step
@@ -75,7 +75,7 @@ void simulate_gc_fixed(particle_queue* pq, sim_data* sim) {
         }
     }
 
-    cputime_last = A5_WTIME;
+    //cputime_last = A5_WTIME;
 
     /* MAIN SIMULATION LOOP
      * - Store current state
@@ -112,7 +112,7 @@ void simulate_gc_fixed(particle_queue* pq, sim_data* sim) {
 
 
         /* Update simulation and cpu times */
-        cputime = A5_WTIME;
+        //cputime = A5_WTIME;
 #ifdef SIMD
         #pragma omp simd
 #endif

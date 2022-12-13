@@ -23,13 +23,17 @@
 #include "step/step_fo_vpa.h"
 #include "mccc/mccc.h"
 
-#pragma omp declare target
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
+DECLARE_TARGET
 #ifdef SIMD
 #pragma omp declare simd uniform(sim)
 #endif
 real simulate_fo_fixed_inidt(sim_data* sim, particle_simd_fo* p, int i);
 void simulate_fo_fixed(particle_queue* pq, sim_data* sim);
-#pragma omp end declare target
+//OMP_L1
+DECLARE_TARGET_END
 
 /**
  * @brief Simulates particles using fixed time-step
@@ -58,130 +62,158 @@ void simulate_fo_fixed(particle_queue* pq, sim_data* sim) {
      * - Check for end condition(s)
      * - Update diagnostics
      */
-//    printf("pqn %d\n", pq->n);
+    //printf("pqn %d\n", ((int) pq->n/NSIMD + 1)*NSIMD);
 //#pragma omp target teams num_teams(NTEAMS) thread_limit(NTHREADS) is_device_ptr(sim, pq, pq_hybrid)
-    #pragma omp distribute parallel for
-    for(int iprt = 0; iprt < pq->n; iprt += NSIMD) {
-//        printf("%d %d %d\n", omp_get_team_num(), omp_get_thread_num(), iprt);
+//#pragma omp distribute parallel for simd
+//#pragma omp distribute //parallel for 
+OMP_L1
+//#pragma OMP_L1
+//#pragma omp distribute simd
+	for(int iprt = 0; iprt < ((int) (pq->n + NSIMD - 1)/NSIMD)*NSIMD ; iprt += NSIMD) 
+    //for(int iiprt = 0; iiprt < pq->n; iiprt += NSIMD) 
+	//for(int iprt = iiprt; iprt < MIN(iiprt + NSIMD, pq->n); iprt += 1)
+	{
 
-        particle_simd_fo p;  // This array holds current states
-        particle_simd_fo p0; // This array stores previous states
+#if 0
+#ifdef _OPENMP
+                                                int ith = omp_get_num_threads();
+                                                int tth = omp_get_num_teams();
+#else
+                                                int ith = 1;
+                                                int tth = 1;
+#endif
+                                                //if (omp_get_team_num() == 0 && omp_get_thread_num() == 0)
+                                                //printf("IN PARALLEL REGION 3 RUNNING WITH %d TEAMS AND %d THREADS PER TEAM\n",tth, ith);
+#endif
+
+
+
+		particle_simd_fo p;  // This array holds current states
+		particle_simd_fo p0; // This array stores previous states
+        	//printf("%d %d %d\n", omp_get_team_num(), omp_get_thread_num(), iprt);
+#if 1
 
         /* Init dummy markers */
+#ifdef SIMD
+	#pragma omp simd 
+#endif
+	//#pragma omp parallel for simd 
+	//#pragma omp simd 
+OMP_L2
         for(int i=0; i< NSIMD; i++) {
-            p.id[i] = -1;
-            p.running[i] = 0;
+		p.id[i] = -1;
+		p.running[i] = 0;
         }
 
         /* Store marker states */
 #ifdef SIMD
         #pragma omp simd
 #endif
-        for(int i = 0; i < NSIMD; i++) {
-            if(iprt + i < pq->n) {
-                particle_state_to_fo(pq->p[iprt+i], iprt+i, &p, i, &sim->B_data);
-                particle_copy_fo(&p, i, &p0, i);
-            }
-        }
+//OMP_L2
+	for(int i = 0; i < NSIMD; i++) {
+		if(iprt + i < pq->n) 
+		{
+			particle_state_to_fo(pq->p[iprt + i], iprt+i, &p, i, &sim->B_data);
+			particle_copy_fo(&p, i, &p0, i);
+		}
+	}
 
-        int n_running = 0;
+	int n_running = 0;
         real hin[NSIMD]  __memalign__;  // Time step
-
+#if 1
         /* Determine simulation time-step */
 #ifdef SIMD
         #pragma omp simd
 #endif
-        for(int i = 0; i < NSIMD; i++) {
-            if(p.running[i] > 0) {
-                n_running++;
-                hin[i] = simulate_fo_fixed_inidt(sim, &p, i);
-            }
-        }
-
+OMP_L2
+	for(int i = 0; i < NSIMD; i++) 
+	{
+		int running = p.running[i];
+		//printf("*** %d > 0 is %d\n", running, (0 < running));
+		if (running > 0) 
+		{
+			n_running++;
+			hin[i] = simulate_fo_fixed_inidt(sim, &p, i);
+			//printf("** team %d thread %d iprt %d  n_running = %d\n", omp_get_team_num(), omp_get_thread_num(), iprt, n_running);
+		}
+	}
+	//#if 0
         real cputime, cputime_last; // Global cpu time: recent and previous record
-        cputime_last = A5_WTIME;
-
-        while(n_running > 0) {
+	real diag_time = 0.;
+	real step_time = 0.;
+	real loop_time = 0.;
+	real end_time  = 0.;
+	real update_time  = 0.;
+        cputime_last   = A5_WTIME;
+	//
+	loop_time = -A5_WTIME;
+        while(n_running > 0) 
+	{
 
             /*************************** Physics **********************************/
 
             /* Volume preserving algorithm for orbit-following */
-            if(sim->enable_orbfol) {
-                step_fo_vpa(&p, hin, &sim->B_data, &sim->E_data);
-            }
-
-            /* Euler-Maruyama for Coulomb collisions */
-            if(sim->enable_clmbcol) {
-                mccc_fo_euler(&p, hin, &sim->B_data, &sim->plasma_data,
-                              &sim->random_data, &sim->mccc_data);
-            }
+	    step_time -= A5_WTIME;
+	    step_fo_vpa(&p, hin, &sim->B_data, &sim->E_data);
+  	    step_time += A5_WTIME;
 
             /**********************************************************************/
 
             /* Update simulation and cpu times */
-            cputime = A5_WTIME;
-    #ifdef SIMD
-            #pragma omp simd
-    #endif
-            for(int i = 0; i < NSIMD; i++) {
-                if(p.running[i]){
-                    p.time[i] = p.time[i] + hin[i];
+            //cputime = A5_WTIME;
+#ifdef SIMD
+#pragma omp simd
+#endif
+//#pragma omp parallel for 
+//OMP_L2
+            for(int i = 0; i < NSIMD; i++) 
+	    {
+                if(p.running[i])
+		{
+                    p.time[i]     = p.time[i] + hin[i];
                     p.cputime[i] += cputime - cputime_last;
                 }
             }
             cputime_last = cputime;
 
             /* Check possible end conditions */
+	    end_time -= A5_WTIME;
             endcond_check_fo(&p, &p0, sim);
+	    end_time += A5_WTIME;
 
             /* Update diagnostics */
-            if(!(sim->record_mode)) {
+            //if(!(sim->record_mode)) 
+	    diag_time -= A5_WTIME;
+            {
                 /* Record particle coordinates */
                 diag_update_fo(&sim->diag_data, &p, &p0);
             }
-            else {
-                /* Instead of particle coordinates we record guiding center */
-
-                // Dummy guiding centers
-                particle_simd_gc gc_f;
-                particle_simd_gc gc_i;
-
-                /* Particle to guiding center transformation */
-    #ifdef SIMD
-                #pragma omp simd
-    #endif
-                for(int i=0; i<NSIMD; i++) {
-                    if(p.running[i]) {
-                        particle_fo_to_gc( &p, i, &gc_f, &sim->B_data);
-                        particle_fo_to_gc(&p0, i, &gc_i, &sim->B_data);
-                    }
-                    else {
-                        gc_f.id[i] = p.id[i];
-                        gc_i.id[i] = p.id[i];
-
-                        gc_f.running[i] = 0;
-                        gc_i.running[i] = 0;
-                    }
-                }
-                diag_update_gc(&sim->diag_data, &gc_f, &gc_i);
-            }
-            n_running = 0;
-
+	    diag_time += A5_WTIME;
+	    //
             /* Update running particles */
-            for(int i = 0; i < NSIMD; i++) {
-                if(p.running[i] > 0) {
-                    n_running++;
-                }
+            n_running = 0;
+//#pragma omp simd 
+	    update_time -= A5_WTIME;
+            for(int i = 0; i < NSIMD; i++) 
+	    {
+                if(p.running[i] > 0) n_running++;
             }
+	    update_time += A5_WTIME;
         } // while n_running
+	loop_time += A5_WTIME;
+	//printf("team %d thread %d loop %f step %f diag %f end %f update %f sum = %f\n", omp_get_team_num(), omp_get_thread_num(), loop_time, step_time, diag_time, end_time, update_time, step_time + diag_time + end_time + update_time);
 
-        for(int i = 0; i < NSIMD; i++) {
-            if(iprt + i < pq->n) {
-                particle_fo_to_state(&p, i, pq->p[iprt+i], &sim->B_data);
+//#pragma omp simd 
+        for(int i = 0; i < NSIMD; i++) 
+	{
+            if(iprt + i < pq->n) 
+	    {
+                particle_fo_to_state(&p, i, pq->p[iprt + i], &sim->B_data);
             }
         }
+#endif
     } // for iprt
-
+#endif
     /* All markers simulated! */
 
 }
