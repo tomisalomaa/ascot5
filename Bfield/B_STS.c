@@ -322,6 +322,7 @@ void B_STS_init(B_STS_data* Bdata, B_STS_offload_data* offload_data,
  *
  * @return Non-zero a5err value if evaluation failed, zero otherwise
  */
+#if 0
 a5err B_STS_eval_psi(real* psi, real r, real phi, real z,
                      B_STS_data* Bdata) {
     a5err err = 0;
@@ -550,3 +551,4 @@ a5err B_STS_get_axis_z(real* axis_z, B_STS_data* Bdata, real phi) {
     }
     return err;
 }
+#endif

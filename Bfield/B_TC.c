@@ -249,7 +249,6 @@ a5err B_TC_eval_B_dB(real B_dB[12], real r, real phi, real z,
 
     return 0;
 }
-
 /**
  * @brief Return magnetic axis R-coordinate
  *

@@ -234,6 +234,7 @@ void B_2DS_init(B_2DS_data* Bdata, B_2DS_offload_data* offload_data,
  *
  * @return Non-zero a5err value if evaluation failed, zero otherwise
  */
+#if 0
 a5err B_2DS_eval_psi(real* psi, real r, real phi, real z, B_2DS_data* Bdata) {
 
     int interperr = 0;
@@ -454,7 +455,6 @@ a5err B_2DS_eval_B_dB(real B_dB[12], real r, real phi, real z,
 
     return err;
 }
-
 /**
  * @brief Return magnetic axis R-coordinate
  *
@@ -473,6 +473,7 @@ real B_2DS_get_axis_r(B_2DS_data* Bdata) {
  *
  * @return Magnetic axis z-coordinate [m]
  */
-real B_2DS_get_axis_z(B_2DS_data* Bdata) {
+real B_2DS_get_axis_z(B_2DS_data* Bdata)  {
     return Bdata->axis_z;
 }
+#endif

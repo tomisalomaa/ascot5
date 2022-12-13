@@ -159,7 +159,7 @@ void B_GS_init(B_GS_data* Bdata, B_GS_offload_data* offload_data,
 
     Bdata->psi_coeff = offload_data->psi_coeff;
 }
-
+#if 0
 /**
  * @brief Evaluate poloidal flux psi
  *
@@ -589,3 +589,4 @@ real B_GS_get_axis_r(B_GS_data* Bdata) {
 real B_GS_get_axis_z(B_GS_data* Bdata) {
     return Bdata->zaxis;
 }
+#endif

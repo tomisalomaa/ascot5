@@ -272,7 +272,7 @@ void B_3DS_init(B_3DS_data* Bdata, B_3DS_offload_data* offload_data,
                              offload_data->psigrid_z_min,
                              offload_data->psigrid_z_max);
 }
-
+#if 0
 /**
  * @brief Evaluate poloidal flux psi
  *
@@ -525,3 +525,4 @@ real B_3DS_get_axis_r(B_3DS_data* Bdata) {
 real B_3DS_get_axis_z(B_3DS_data* Bdata) {
     return Bdata->axis_z;
 }
+#endif
