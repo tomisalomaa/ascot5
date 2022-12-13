@@ -13,7 +13,7 @@
 /**
  * @brief Internal function calculating the index in the histogram array
  */
-#pragma omp declare target
+DECLARE_TARGET
 unsigned long dist_rho5D_index(int i_rho, int i_theta, int i_phi, int i_vpara,
                                int i_vperp, int i_time, int i_q, int n_theta,
                                int n_phi, int n_vpara, int n_vperp, int n_time,
@@ -27,7 +27,7 @@ unsigned long dist_rho5D_index(int i_rho, int i_theta, int i_phi, int i_vpara,
         + i_q;
 
 }
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 /**
  * @brief Frees the offload data
@@ -125,6 +125,8 @@ void dist_rho5D_update_fo(dist_rho5D_data* dist, particle_simd_fo* p_f,
 #ifdef SIMD
     #pragma omp simd
 #endif
+    //#pragma omp parallel for simd
+    OMP_L2
     for(int i = 0; i < NSIMD; i++) {
         if(p_f->running[i]) {
             i_rho[i] = floor((p_f->rho[i] - dist->min_rho)

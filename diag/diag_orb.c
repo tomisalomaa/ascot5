@@ -14,12 +14,12 @@
 #include "../B_field.h"
 #include "diag_orb.h"
 
-#pragma omp declare target
+DECLARE_TARGET
 #ifdef SIMD
 #pragma omp declare simd uniform(ang0)
 #endif
 real diag_orb_check_plane_crossing(real fang, real iang, real ang0);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 /**
  * @brief Initializes orbit diagnostics offload data.
@@ -167,13 +167,15 @@ void diag_orb_update_fo(diag_orb_data* data, particle_simd_fo* p_f,
 #ifdef SIMD
         #pragma omp simd
 #endif
+        //#pragma omp parallel for simd
+OMP_L2
         for(int i= 0; i < NSIMD; i++) {
 
             /* Mask dummy markers */
             if(p_f->id[i] > 0) {
                 integer imrk   = p_f->index[i];
                 integer ipoint = data->mrk_pnt[imrk];
-                integer idx    = imrk * data->Npnt + ipoint;
+                integer idx    = imrk*data->Npnt + ipoint;
 
                 /* If this is the first time-step, record marker position. */
                 if( data->id[imrk * data->Npnt] == 0 ) {
@@ -239,6 +241,8 @@ void diag_orb_update_fo(diag_orb_data* data, particle_simd_fo* p_f,
 #ifdef SIMD
         #pragma omp simd
 #endif
+        //@@#pragma omp parallel for simd
+        OMP_L2
         for(int i= 0; i < NSIMD; i++) {
             /* Mask dummy markers and thosw whose time-step was rejected. */
             if( p_f->id[i] > 0 && (p_f->time[i] != p_i->time[i]) ) {
