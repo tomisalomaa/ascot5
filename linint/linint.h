@@ -65,35 +65,45 @@ typedef struct {
     real* c;     /**< pointer to array with interpolant values       */
 } linint3D_data;
 
-#pragma omp declare target
+DECLARE_TARGET
 void linint1D_init(linint1D_data* str, real* c,
                    int n_x, int bc_x,
                    real x_min, real x_max);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 void linint2D_init(linint2D_data* str, real* c,
                    int n_x, int n_y, int bc_x, int bc_y,
                    real x_min, real x_max,
                    real y_min, real y_max);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 void linint3D_init(linint3D_data* str, real* c,
                    int n_x, int n_y, int n_z,
                    int bc_x, int bc_y, int bc_z,
                    real x_min, real x_max,
                    real y_min, real y_max,
                    real z_min, real z_max);
+DECLARE_TARGET_END
 
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 int linint1D_eval_f(real* f, linint1D_data* str, real x);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 int linint2D_eval_f(real* f, linint2D_data* str, real x, real y);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 int linint3D_eval_f(real* f, linint3D_data* str,
                     real x, real y, real z);
-#pragma omp end declare target
+DECLARE_TARGET_END
 #endif
