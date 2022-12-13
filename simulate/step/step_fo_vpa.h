@@ -8,8 +8,8 @@
 #include "../../E_field.h"
 #include "../../particle.h"
 
-#pragma omp declare target
+DECLARE_TARGET
 void step_fo_vpa(particle_simd_fo* p, real* h, B_field_data* Bdata, E_field_data* Edata);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 #endif

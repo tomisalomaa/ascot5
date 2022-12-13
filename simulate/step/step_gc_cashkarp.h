@@ -9,9 +9,9 @@
 #include "../../E_field.h"
 #include "../../particle.h"
 
-#pragma omp declare target
+DECLARE_TARGET
 void step_gc_cashkarp(particle_simd_gc* p, real* h, real* hnext,
                       real tol, B_field_data* Bdata, E_field_data* Edata);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 #endif
