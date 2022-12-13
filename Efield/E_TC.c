@@ -67,7 +67,7 @@ void E_TC_init(E_TC_data* Edata, E_TC_offload_data* offload_data,
                real* offload_array) {
     Edata->Exyz = offload_data->Exyz;
 }
-
+#if 0
 /**
  * @brief Evaluate electric field
  *
@@ -89,3 +89,4 @@ a5err E_TC_eval_E(real E[3], real r, real phi, real z, E_TC_data* Edata,
 
     return 0;
 }
+#endif
