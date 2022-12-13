@@ -177,7 +177,7 @@ void wall_3d_init_tree(wall_3d_data* w, real* offload_array) {
         t3[2] = offload_array[i*9+8];
 
         int ix, iy, iz;
-        #pragma omp parallel for private(ix, iy, iz)
+        //#pragma omp parallel for private(ix, iy, iz)
         for(ix = 0; ix < w->ngrid; ix++) {
             for(iy = 0; iy < w->ngrid; iy++) {
                 for(iz = 0; iz < w->ngrid; iz++) {
