@@ -9,8 +9,8 @@
 #include "../simulate.h"
 #include "../particle.h"
 
-#pragma omp declare target
+DECLARE_TARGET
 void simulate_gc_fixed(particle_queue* pq, sim_data* sim);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 #endif

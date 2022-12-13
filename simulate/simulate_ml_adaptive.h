@@ -8,8 +8,8 @@
 #include "../simulate.h"
 #include "../particle.h"
 
-#pragma omp declare target
+DECLARE_TARGET
 void simulate_ml_adaptive(particle_queue* pq, sim_data* sim);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 #endif

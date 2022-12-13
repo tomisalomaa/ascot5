@@ -9,8 +9,9 @@
 #include "../simulate.h"
 #include "../particle.h"
 
-#pragma omp declare target
+//DECLARE_TARGET
+#pragma acc routine gang
 void simulate_fo_fixed(particle_queue* pq, sim_data* sim);
-#pragma omp end declare target
+//DECLARE_TARGET_END
 
 #endif
