@@ -62,7 +62,7 @@ printf("Loop time: %f\n",tt);
 
 }
 
-#pragma omp declare target
+DECLARE_TARGET
 int setA(float *ain, int i, int j, int *iii, int ny)
 {
 

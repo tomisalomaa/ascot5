@@ -6,8 +6,8 @@
 #define SPLINE_H
 #include "../ascot5.h"
 
-#pragma omp declare target
+DECLARE_TARGET
 void splineexpl(real* f, int n, int bc, real* c);
 void splinecomp(real* f, int n, int bc, real* c);
-#pragma omp end declare target
+DECLARE_TARGET_END
 #endif

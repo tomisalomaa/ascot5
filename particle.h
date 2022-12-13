@@ -23,6 +23,7 @@
 #include "B_field.h"
 #include "E_field.h"
 #include "error.h"
+//#include "consts.h"
 
 /**
  * @brief General representation of a marker
@@ -385,68 +386,310 @@ typedef struct {
 
 
 
-#pragma omp declare target
+DECLARE_TARGET
 void particle_to_fo_dummy(particle_simd_fo* p_fo, int j);
+DECLARE_TARGET_END
+DECLARE_TARGET
 void particle_to_gc_dummy(particle_simd_gc* p_gc, int j);
+DECLARE_TARGET_END
+DECLARE_TARGET
 void particle_to_ml_dummy(particle_simd_ml* p_ml, int j);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 int particle_cycle_fo(particle_queue* q, particle_simd_fo* p,
                       B_field_data* Bdata, int* cycle);
+DECLARE_TARGET_END
+DECLARE_TARGET
 int particle_cycle_gc(particle_queue* q, particle_simd_gc* p,
                       B_field_data* Bdata, int* cycle);
+DECLARE_TARGET_END
+DECLARE_TARGET
 int particle_cycle_ml(particle_queue* q, particle_simd_ml* p,
                       B_field_data* Bdata, int* cycle);
 
+DECLARE_TARGET_END
+DECLARE_TARGET
 void particle_input_to_state(input_particle* p, particle_state* ps,
                              B_field_data* Bdata);
+DECLARE_TARGET_END
 
 #ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
 #endif
+DECLARE_TARGET
+inline
+__attribute__((always_inline))
 a5err particle_state_to_fo(particle_state* p, int i, particle_simd_fo* p_fo,
-                           int j, B_field_data* Bdata);
+                           int j, B_field_data* Bdata)
+{
+    a5err err = p->err;
+
+    if(!err) {
+        p_fo->r[j]          = p->rprt;
+        p_fo->phi[j]        = p->phiprt;
+        p_fo->z[j]          = p->zprt;
+        p_fo->rdot[j]       = p->rdot;
+        p_fo->phidot[j]     = p->phidot;
+        p_fo->zdot[j]       = p->zdot;
+
+        p_fo->mass[j]       = p->mass;
+        p_fo->charge[j]     = p->charge;
+        p_fo->weight[j]     = p->weight;
+        p_fo->time[j]       = p->time;
+        p_fo->theta[j]      = p->theta;
+        p_fo->id[j]         = p->id;
+        p_fo->endcond[j]    = p->endcond;
+        p_fo->walltile[j]   = p->walltile;
+    }
+
+    /* Magnetic field stored in state is for the gc position */
+    real B_dB[15], psi[1], rho[1];
+    if(!err) {
+        err = B_field_eval_B_dB(B_dB, p->rprt, p->phiprt, p->zprt, p->time,
+                                Bdata);
+    }
+    if(!err) {
+        err = B_field_eval_psi(psi, p->rprt, p->phiprt, p->zprt, p->time,
+                               Bdata);
+    }
+    if(!err) {
+        err = B_field_eval_rho(rho, psi[0], Bdata);
+    }
+
+    if(!err) {
+        p_fo->rho[j]        = rho[0];
+
+        p_fo->B_r[j]        = B_dB[0];
+        p_fo->B_r_dr[j]     = B_dB[1];
+        p_fo->B_r_dphi[j]   = B_dB[2];
+        p_fo->B_r_dz[j]     = B_dB[3];
+
+        p_fo->B_phi[j]      = B_dB[4];
+        p_fo->B_phi_dr[j]   = B_dB[5];
+        p_fo->B_phi_dphi[j] = B_dB[6];
+        p_fo->B_phi_dz[j]   = B_dB[7];
+
+        p_fo->B_z[j]        = B_dB[8];
+        p_fo->B_z_dr[j]     = B_dB[9];
+        p_fo->B_z_dphi[j]   = B_dB[10];
+        p_fo->B_z_dz[j]     = B_dB[11];
+
+        p_fo->running[j] = 1;
+        if(p->endcond) {
+            p_fo->running[j] = 0;
+        }
+        p_fo->cputime[j] = p->cputime;
+        p_fo->index[j]   = i;
+
+        p_fo->err[j] = 0;
+    }
+
+    return err;
+}
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
 #endif
+DECLARE_TARGET
 void particle_fo_to_state(particle_simd_fo* p_fo, int j, particle_state* p,
                           B_field_data* Bdata);
+DECLARE_TARGET_END
+/* inline */
+/* void particle_fo_to_state_inline(particle_simd_fo* p_fo, int j, particle_state* p, */
+/*                           B_field_data* Bdata) */
+/* { */
+/*     a5err err = 0; */
+
+/*     p->rprt       = p_fo->r[j]; */
+/*     p->phiprt     = p_fo->phi[j]; */
+/*     p->zprt       = p_fo->z[j]; */
+/*     p->rdot       = p_fo->rdot[j]; */
+/*     p->phidot     = p_fo->phidot[j]; */
+/*     p->zdot       = p_fo->zdot[j]; */
+
+/*     p->mass       = p_fo->mass[j]; */
+/*     p->charge     = p_fo->charge[j]; */
+/*     p->weight     = p_fo->weight[j]; */
+/*     p->time       = p_fo->time[j]; */
+/*     p->theta      = p_fo->theta[j]; */
+/*     p->id         = p_fo->id[j]; */
+/*     p->endcond    = p_fo->endcond[j]; */
+/*     p->walltile   = p_fo->walltile[j]; */
+/*     p->cputime    = p_fo->cputime[j]; */
+
+/*     /\* Particle to guiding center *\/ */
+/*     real B_dB[15], psi[1], rho[1]; */
+/*     rho[0]        = p_fo->rho[j]; */
+/*     B_dB[0]       = p_fo->B_r[j]; */
+/*     B_dB[1]       = p_fo->B_r_dr[j]; */
+/*     B_dB[2]       = p_fo->B_r_dphi[j]; */
+/*     B_dB[3]       = p_fo->B_r_dz[j]; */
+/*     B_dB[4]       = p_fo->B_phi[j]; */
+/*     B_dB[5]       = p_fo->B_phi_dr[j]; */
+/*     B_dB[6]       = p_fo->B_phi_dphi[j]; */
+/*     B_dB[7]       = p_fo->B_phi_dz[j]; */
+/*     B_dB[8]       = p_fo->B_z[j]; */
+/*     B_dB[9]       = p_fo->B_z_dr[j]; */
+/*     B_dB[10]      = p_fo->B_z_dphi[j]; */
+/*     B_dB[11]      = p_fo->B_z_dz[j]; */
+
+/*     /\* Guiding center transformation *\/ */
+/*     real vpar; */
+/*     if(!err) { */
+/*         real vR   = p->rdot; */
+/*         real vphi = p->phidot * p->rprt; */
+/*         real vz   = p->zdot; */
+
+/*         gctransform_particle2guidingcenter( */
+/*             p->mass, p->charge, B_dB, */
+/*             p->rprt, p->phiprt, p->zprt, vR , vphi, vz, */
+/*             &p->r, &p->phi, &p->z, &vpar, &p->mu, &p->zeta); */
+/*     } */
+/*     if(!err && p->r <= 0)  {err = error_raise(ERR_MARKER_UNPHYSICAL, __LINE__, EF_PARTICLE);} */
+/*     if(!err && p->mu < 0)  {err = error_raise(ERR_MARKER_UNPHYSICAL, __LINE__, EF_PARTICLE);} */
+
+/*     if(!err) { */
+/*         err = B_field_eval_B_dB(B_dB, p->r, p->phi, p->z, p->time, Bdata); */
+/*     } */
+/*     if(!err) { */
+/*         err = B_field_eval_psi(psi, p->r, p->phi, p->z, p->time, Bdata); */
+/*     } */
+/*     if(!err) { */
+/*         err = B_field_eval_rho(rho, psi[0], Bdata); */
+/*     } */
+
+/*     if(!err) { */
+/*         p->vpar = vpar; */
+/*     } */
+/*     if(!err && p->vpar >= CONST_C) { */
+/*         err = error_raise(ERR_MARKER_UNPHYSICAL, __LINE__, EF_PARTICLE); */
+/*     } */
+
+/*     /\* Normally magnetic field data at gc position is stored here */
+/*      * but, if gc transformation fails, field at particle position is */
+/*      * stored instead. *\/ */
+/*     p->rho        = rho[0]; */
+
+/*     p->B_r        = B_dB[0]; */
+/*     p->B_r_dr     = B_dB[1]; */
+/*     p->B_r_dphi   = B_dB[2]; */
+/*     p->B_r_dz     = B_dB[3]; */
+
+/*     p->B_phi      = B_dB[4]; */
+/*     p->B_phi_dr   = B_dB[5]; */
+/*     p->B_phi_dphi = B_dB[6]; */
+/*     p->B_phi_dz   = B_dB[7]; */
+
+/*     p->B_z        = B_dB[8]; */
+/*     p->B_z_dr     = B_dB[9]; */
+/*     p->B_z_dphi   = B_dB[10]; */
+/*     p->B_z_dz     = B_dB[11]; */
+
+/*     /\* If marker already has error flag, make sure it is not overwritten here *\/ */
+/*     a5err simerr  = p_fo->err[j]; */
+/*     if(simerr) { */
+/*         p->err = simerr; */
+/*     } */
+/*     else { */
+/*         p->err = err; */
+/*     } */
+/* }//; */
 #ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
 #endif
+DECLARE_TARGET
 a5err particle_state_to_gc(particle_state* p, int i, particle_simd_gc* p_gc,
                            int j, B_field_data* Bdata);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
 #endif
+DECLARE_TARGET
 void particle_gc_to_state(particle_simd_gc* p_gc, int j, particle_state* p,
                           B_field_data* Bdata);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
 #endif
+DECLARE_TARGET
 a5err particle_state_to_ml(particle_state* p, int i, particle_simd_ml* p_ml,
                            int j, B_field_data* Bdata);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(Bdata)
 #endif
+DECLARE_TARGET
 void particle_ml_to_state(particle_simd_ml* p_ml, int j, particle_state* p,
                           B_field_data* Bdata);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(p_fo,Bdata)
 #endif
+DECLARE_TARGET
 int particle_fo_to_gc(particle_simd_fo* p_fo, int j, particle_simd_gc* p_gc,
                       B_field_data* Bdata);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd
 #endif
-void particle_copy_fo(particle_simd_fo* p1, int i, particle_simd_fo* p2, int j);
+DECLARE_TARGET
+inline
+__attribute__((always_inline))
+void particle_copy_fo(particle_simd_fo* p1, int i, particle_simd_fo* p2, int j)
+{
+        p2->r[j]          = p1->r[i];
+        p2->phi[j]        = p1->phi[i];
+        p2->z[j]          = p1->z[i];
+        p2->rdot[j]       = p1->rdot[i];
+        p2->phidot[j]     = p1->phidot[i];
+        p2->zdot[j]       = p1->zdot[i];
+
+        p2->time[j]       = p1->time[i];
+        p2->cputime[j]    = p1->cputime[i];
+        p2->rho[j]        = p1->rho[i];
+        p2->weight[j]     = p1->weight[i];
+        p2->cputime[j]    = p1->cputime[i];
+        p2->rho[j]        = p1->rho[i];
+        p2->theta[j]      = p1->theta[i];
+
+        p2->mass[j]       = p1->mass[i];
+        p2->charge[j]     = p1->charge[i];
+
+        p2->id[j]         = p1->id[i];
+        p2->running[j]    = p1->running[i];
+        p2->endcond[j]    = p1->endcond[i];
+        p2->walltile[j]   = p1->walltile[i];
+
+        p2->B_r[j]        = p1->B_r[i];
+        p2->B_phi[j]      = p1->B_phi[i];
+        p2->B_z[j]        = p1->B_z[i];
+
+        p2->B_r_dr[j]     = p1->B_r_dr[i];
+        p2->B_r_dphi[j]   = p1->B_r_dphi[i];
+        p2->B_r_dz[j]     = p1->B_r_dz[i];
+
+        p2->B_phi_dr[j]   = p1->B_phi_dr[i];
+        p2->B_phi_dphi[j] = p1->B_phi_dphi[i];
+        p2->B_phi_dz[j]   = p1->B_phi_dz[i];
+
+        p2->B_z_dr[j]     = p1->B_z_dr[i];
+        p2->B_z_dphi[j]   = p1->B_z_dphi[i];
+        p2->B_z_dz[j]     = p1->B_z_dz[i];
+}
+DECLARE_TARGET_END
+
 #ifdef SIMD
 #pragma omp declare simd
 #endif
+DECLARE_TARGET
 void particle_copy_gc(particle_simd_gc* p1, int i, particle_simd_gc* p2, int j);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd
 #endif
+DECLARE_TARGET
 void particle_copy_ml(particle_simd_ml* p1, int i, particle_simd_ml* p2, int j);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 #endif

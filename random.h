@@ -56,17 +56,34 @@ void random_gsl_normal_simd(random_data* rdata, int n, double* r);
 
 #include <stdint.h>
 
-#pragma omp declare target
+#ifdef _OPENMP
+DECLARE_TARGET
+#endif
 typedef struct {
     uint64_t r;
 } random_data;
+#ifdef _OPENMP
+DECLARE_TARGET_END
+#endif
 
+DECLARE_TARGET
 void random_lcg_init(random_data* rdata, uint64_t seed);
+DECLARE_TARGET_END
+DECLARE_TARGET
 uint64_t random_lcg_integer(random_data* rdata);
+DECLARE_TARGET_END
+DECLARE_TARGET
 double random_lcg_uniform(random_data* rdata);
+DECLARE_TARGET_END
+DECLARE_TARGET
 double random_lcg_normal(random_data* rdata);
+DECLARE_TARGET_END
+DECLARE_TARGET
 void random_lcg_uniform_simd(random_data* rdata, int n, double* r);
+DECLARE_TARGET_END
+DECLARE_TARGET
 void random_lcg_normal_simd(random_data* rdata, int n, double* r);
+DECLARE_TARGET_END
 
 #define random_init(data, seed) random_lcg_init(data, seed)
 #define random_uniform(data) random_lcg_uniform(data)
@@ -74,20 +91,28 @@ void random_lcg_normal_simd(random_data* rdata, int n, double* r);
 #define random_uniform_simd(data, n, r) random_lcg_uniform_simd(data, n, r)
 #define random_normal_simd(data, n, r) random_lcg_normal_simd(data, n, r)
 
-#pragma omp end declare target
-
-
 #else /* No RNG lib defined, use drand48 */
 
 //#define _XOPEN_SOURCE 500
 #include <stdlib.h>
 
-#pragma omp declare target
+#ifdef _OPENMP
+DECLARE_TARGET
+#endif
 typedef void* random_data;
+#ifdef _OPENMP
+DECLARE_TARGET_END
+#endif
 
+DECLARE_TARGET
 double random_drand48_normal();
+DECLARE_TARGET_END
+DECLARE_TARGET
 void random_drand48_uniform_simd(int n, double* r);
+DECLARE_TARGET_END
+DECLARE_TARGET
 void random_drand48_normal_simd(int n, double* r);
+DECLARE_TARGET_END
 
 //#define random_init(data, seed) srand48(seed)
 #define random_init(data, seed) 
@@ -97,8 +122,9 @@ void random_drand48_normal_simd(int n, double* r);
 #define random_uniform_simd(data, n, r) random_drand48_uniform_simd(n, r)
 #define random_normal_simd(data, n, r) random_drand48_normal_simd(n, r)
 
-#pragma omp end declare target
-
+#endif
+#ifdef _OPENACC
+//#pragma acc declare copyin(random_data)
 #endif
 
 #endif

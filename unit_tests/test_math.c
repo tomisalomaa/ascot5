@@ -20,7 +20,8 @@ double myfunc(double x){
  */
 int main(void) {
   int i;
-  srand48(0);
+  //srand48(0);
+  srand(0);
 
   double accurate=(10.0-(sin(100.0)+10.0*cos(100.0))*exp(-10.0))/101.0;
   double approx=math_simpson(myfunc,0.0,10.0,1.e-10);

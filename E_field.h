@@ -62,14 +62,36 @@ int E_field_init_offload(E_field_offload_data* offload_data,
 void E_field_free_offload(E_field_offload_data* offload_data,
                           real** offload_array);
 
-#pragma omp declare target
+DECLARE_TARGET
 int E_field_init(E_field_data* Edata, E_field_offload_data* offload_data,
                  real* offload_array);
 #ifdef SIMD
 #pragma omp declare simd uniform(Edata, Bdata)
 #endif
+inline
+__attribute__((always_inline))
 a5err E_field_eval_E(real E[3], real r, real phi, real z, real t,
-                     E_field_data* Edata, B_field_data* Bdata);
-#pragma omp end declare target
+                     E_field_data* Edata, B_field_data* Bdata) {
+    a5err err = 0;
+
+    switch(Edata->type) {
+
+        case E_field_type_1DS:
+	  err = E_1DS_eval_E(E, r, phi, z, &(Edata->E1DS), Bdata);
+            break;
+
+        case E_field_type_TC:
+            err = E_TC_eval_E(E, r, phi, z, &(Edata->ETC), Bdata);
+            break;
+
+        default:
+            /* Unregonized input. Produce error. */
+            err = error_raise( ERR_UNKNOWN_INPUT, __LINE__, EF_E_FIELD );
+            break;
+    }
+
+    return err;
+}//;
+DECLARE_TARGET_END
 
 #endif

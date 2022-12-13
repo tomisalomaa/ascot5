@@ -21,9 +21,9 @@ void offload_free_offload(offload_package* o, real** pack_array);
 void offload_pack(offload_package* o, real** offload_array, real* pack_array,
                   size_t pack_length);
 
-#pragma omp declare target
+DECLARE_TARGET
 real* offload_unpack(offload_package* o, real* pack_array,
                      size_t pack_length);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 #endif

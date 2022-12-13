@@ -9,7 +9,7 @@
 
 #include <math.h>
 #include <stdio.h>
-
+#include "offload_acc_omp.h"
 /**
  * @brief Simulation error flag
  */
@@ -62,7 +62,6 @@ typedef enum error_type {
                                       unphysical results                     */
 }error_type;
 
-#pragma omp declare target
 /**
  * @brief Raise a new error
  *
@@ -77,6 +76,7 @@ typedef enum error_type {
 #ifdef SIMD
 #pragma omp declare simd
 #endif
+DECLARE_TARGET
 static inline a5err error_raise(error_type type, int line, error_file file) {
     a5err err = 0;
     err += (a5err)(type);
@@ -84,8 +84,7 @@ static inline a5err error_raise(error_type type, int line, error_file file) {
     err += (a5err)(file*256*1024);
     return err;
 }
-#pragma omp end declare target
-
+DECLARE_TARGET_END
 void error_parse(a5err err, int* msg, int* line, int* file);
 
 void error_parse2str(a5err err, char* msg, char* line, char* file);

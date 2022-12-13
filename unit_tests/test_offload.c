@@ -1,27 +1,27 @@
 #include <omp.h>
 #include <stdio.h>
-
-#pragma omp declare target
+#include "../offload_acc_omp.h"
+DECLARE_TARGET
 int go_do_something(void);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 int main ( void ){
 
   int n;
 
-  printf("Doing something!\n");
+/*   printf("Doing something!\n"); */
 
-#pragma omp target device(0)
-  n=go_do_something();
+/* #pragma omp target device(0) */
+/*   n=go_do_something(); */
 
 
-  printf("Did something (%d)!\n",n);
+/*   printf("Did something (%d)!\n",n); */
   return 0;
 }
 
 int go_do_something(void){
 
-  const int m = 1000;
+  /*  const int m = 1000;
   int i,j,k[m];
 
 #pragma omp parallel for private(j)
@@ -29,6 +29,6 @@ int go_do_something(void){
     j=i*2;
     k[i] = j;
   }
-
-  return k[m-1];
+  */
+  return 0;//k[m-1];
 }

@@ -132,93 +132,127 @@ int interp3Dexpl_init_coeff(real* c, real* f,
                             real y_min, real y_max,
                             real z_min, real z_max);
 
-#pragma omp declare target
+DECLARE_TARGET
 void interp1Dcomp_init_spline(interp1D_data* str, real* c,
                               int n_x, int bc_x,
                               real x_min, real x_max);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 void interp2Dcomp_init_spline(interp2D_data* str, real* c,
                               int n_x, int n_y, int bc_x, int bc_y,
                               real x_min, real x_max,
                               real y_min, real y_max);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 void interp3Dcomp_init_spline(interp3D_data* str, real* c,
                               int n_x, int n_y, int n_z,
                               int bc_x, int bc_y, int bc_z,
                               real x_min, real x_max,
                               real y_min, real y_max,
                               real z_min, real z_max);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 void interp1Dexpl_init_spline(interp1D_data* str, real* c,
                               int n_x, int bc_x,
                               real x_min, real x_max);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 void interp2Dexpl_init_spline(interp2D_data* str, real* c,
                               int n_x, int n_y, int bc_x, int bc_y,
                               real x_min, real x_max,
                               real y_min, real y_max);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 void interp3Dexpl_init_spline(interp3D_data* str, real* c,
                               int n_x, int n_y, int n_z,
                               int bc_x, int bc_y, int bc_z,
                               real x_min, real x_max,
                               real y_min, real y_max,
                               real z_min, real z_max);
+DECLARE_TARGET_END
 
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp1Dcomp_eval_f(real* f, interp1D_data* str, real x);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp2Dcomp_eval_f(real* f, interp2D_data* str, real x, real y);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp3Dcomp_eval_f(real* f, interp3D_data* str,
                          real x, real y, real z);
+DECLARE_TARGET_END
 
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp1Dexpl_eval_f(real* f, interp1D_data* str, real x);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp2Dexpl_eval_f(real* f, interp2D_data* str, real x, real y);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp3Dexpl_eval_f(real* f, interp3D_data* str,
                           real x, real y, real z);
+DECLARE_TARGET_END
 
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp1Dcomp_eval_df(real* f_df, interp1D_data* str, real x);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp2Dcomp_eval_df(real* f_df, interp2D_data* str, real x, real y);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp3Dcomp_eval_df(real* f_df, interp3D_data* str,
                            real x, real y, real z);
+DECLARE_TARGET_END
 
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp1Dexpl_eval_df(real* f_df, interp1D_data* str, real x);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp2Dexpl_eval_df(real* f_df, interp2D_data* str, real x, real y);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(str)
 #endif
+DECLARE_TARGET
 a5err interp3Dexpl_eval_df(real* f_df, interp3D_data* str,
                            real x, real y, real z);
-#pragma omp end declare target
+DECLARE_TARGET_END
 #endif

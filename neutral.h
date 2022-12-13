@@ -57,7 +57,7 @@ int neutral_init_offload(neutral_offload_data* offload_data,
 void neutral_free_offload(neutral_offload_data* offload_data,
                           real** offload_array);
 
-#pragma omp declare target
+DECLARE_TARGET
 int neutral_init(neutral_data* ndata, neutral_offload_data* offload_data,
                  real* offload_array);
 #ifdef SIMD
@@ -70,5 +70,5 @@ a5err neutral_eval_n0(real* n0, real r, real phi, real z, real t,
 #endif
 a5err neutral_eval_t0(real* t0, real r, real phi, real z, real t,
                       neutral_data* ndata);
-#pragma omp end declare target
+DECLARE_TARGET_END
 #endif

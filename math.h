@@ -82,44 +82,79 @@
 /** @brief Convert radians to degrees */
 #define math_rad2deg(a) (a * math_raddeg)
 
-#pragma omp declare target
 #ifdef SIMD
 #pragma omp declare simd
 #endif
+DECLARE_TARGET
 void math_jac_rpz2xyz(real* rpz, real* xyz, real r, real phi);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd
 #endif
+DECLARE_TARGET
 void math_jac_xyz2rpz(real* xyz, real* rpz, real r, real phi);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd
 #endif
-void math_matmul(real* matA, real* matB, int d1, int d2, int d3, real* matC);
+DECLARE_TARGET
+inline
+__attribute__((always_inline))
+void math_matmul(real* matA, real* matB, int d1, int d2, int d3, real* matC) {
+    real sum;
+    for (int i = 0; i < d1; i=i+1) {
+        for (int j = 0; j < d3; j=j+1) {
+            sum = 0.0;
+            for (int k = 0; k < d2; k=k+1){
+                sum = sum + matA[k * d1 + i]*matB[j * d2 + k];
+            }
+            matC[i * d3 + j] = sum;
+        }
+    }
+}//;
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd
 #endif
+DECLARE_TARGET
 real math_normal_rand();
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd
 #endif
+DECLARE_TARGET
 int math_ipow(int a, int p);
+DECLARE_TARGET_END
+DECLARE_TARGET
 double math_simpson(double (*f)(double), double a, double b, double epsilon);
+DECLARE_TARGET_END
+DECLARE_TARGET
 void math_linspace(real* vec, real a, real b, int n);
+DECLARE_TARGET_END
+DECLARE_TARGET
 void math_uniquecount(int* in, int* unique, int* count, int n);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd
 #endif
+DECLARE_TARGET
 real* math_rsearch(const real key, const real* base, int num);
+DECLARE_TARGET_END
 #ifdef SIMD
 #pragma omp declare simd uniform(rv,zv,n)
 #endif
+DECLARE_TARGET
 int math_point_in_polygon(real r, real z, real* rv, real* zv, int n);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 int rcomp(const void* a, const void* b);
+DECLARE_TARGET_END
+DECLARE_TARGET
 double math_simpson_helper(double (*f)(double), double a, double b, double eps,
                            double S, double fa, double fb, double fc,
                            int bottom);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 
 #endif

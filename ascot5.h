@@ -89,6 +89,11 @@ typedef double real;  /**< Double precision float   */
 #define NSIMD 16
 #endif
 
+//#define OMP_L1 "omp distribute" 
+//#define OMP_L2 "omp parallel for"
+#include "offload_acc_omp.h"
+
+
 /** @brief Maximum number of plasma species */
 #define MAX_SPECIES 8
 
@@ -120,5 +125,10 @@ typedef double real;  /**< Double precision float   */
 
 /** @brief Choose whether to use tabulated values for collision coefficients */
 #define A5_CCOL_USE_TABULATED 0
+
+DECLARE_TARGET
+double fmod(double , double );
+double omp_get_wtime(void);
+DECLARE_TARGET_END
 
 #endif
