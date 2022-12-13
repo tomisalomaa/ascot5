@@ -83,20 +83,28 @@ typedef struct{
 
 }diag_orb_data;
 
-#pragma omp declare target
+DECLARE_TARGET
 void diag_orb_init(diag_orb_data* data, diag_orb_offload_data* offload_data,
                    real* offload_array);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 void diag_orb_free(diag_orb_data* data);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 void diag_orb_update_fo(diag_orb_data* data,
                         particle_simd_fo* p_f, particle_simd_fo* p_i);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 void diag_orb_update_gc(diag_orb_data* data,
                         particle_simd_gc* p_f, particle_simd_gc* p_i);
+DECLARE_TARGET_END
 
+DECLARE_TARGET
 void diag_orb_update_ml(diag_orb_data* data,
                         particle_simd_ml* p_f, particle_simd_ml* p_i);
-#pragma omp end declare target
+DECLARE_TARGET_END
 
 #endif
