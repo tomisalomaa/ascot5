@@ -29,10 +29,13 @@ void step_fo_vpa(particle_simd_fo* p, real* h, B_field_data* Bdata,
                  E_field_data* Edata) {
 
     int i;
+    //printf("** %d %d\n", omp_get_team_num(), omp_get_thread_num()); 
     /* Following loop will be executed simultaneously for all i */
 #ifdef SIMD
     #pragma omp simd  aligned(h : 64)
 #endif
+    //#pragma omp parallel for simd  
+    OMP_L2
     for(i = 0; i < NSIMD; i++) {
         if(p->running[i]) {
             a5err errflag = 0;
@@ -51,9 +54,9 @@ void step_fo_vpa(particle_simd_fo* p, real* h, B_field_data* Bdata,
             math_rpz2xyz(posrpz,posxyz0);
 
             /* Take a half step and evaluate fields at that position */
-            posxyz[0] = posxyz0[0] + vxyz[0]*h[i]/2;
-            posxyz[1] = posxyz0[1] + vxyz[1]*h[i]/2;
-            posxyz[2] = posxyz0[2] + vxyz[2]*h[i]/2;
+            posxyz[0] = posxyz0[0] + vxyz[0]*h[i]/2.;
+            posxyz[1] = posxyz0[1] + vxyz[1]*h[i]/2.;
+            posxyz[2] = posxyz0[2] + vxyz[2]*h[i]/2.;
 
             math_xyz2rpz(posxyz,posrpz);
 
@@ -61,11 +64,11 @@ void step_fo_vpa(particle_simd_fo* p, real* h, B_field_data* Bdata,
             real Erpz[3];
             if(!errflag) {
                 errflag = B_field_eval_B(Brpz, posrpz[0], posrpz[1], posrpz[2],
-                                         t0 + h[i]/2, Bdata);
+                                         t0 + h[i]/2., Bdata);
             }
             if(!errflag) {
                 errflag = E_field_eval_E(Erpz, posrpz[0], posrpz[1], posrpz[2],
-                                         t0 + h[i]/2, Edata, Bdata);
+                                         t0 + h[i]/2., Edata, Bdata);
             }
 
             real fposxyz[3]; // final position in cartesian coordinates
@@ -81,20 +84,20 @@ void step_fo_vpa(particle_simd_fo* p, real* h, B_field_data* Bdata,
                 /* Evaluate helper variable pminus */
                 real pminus[3];
                 real vnorm = math_norm(vxyz);
-                real gamma = sqrt(1 / ( (1 - vnorm/CONST_C)*(1 + vnorm/CONST_C) ));
-                real sigma = p->charge[i]*h[i]/(2*p->mass[i]*CONST_C);
+                real gamma = sqrt(1. / ( (1. - vnorm/CONST_C)*(1. + vnorm/CONST_C) ));
+                real sigma = p->charge[i]*h[i]/(2.*p->mass[i]*CONST_C);
                 pminus[0] = gamma*vxyz[0]/(CONST_C) + sigma*Exyz[0];
                 pminus[1] = gamma*vxyz[1]/(CONST_C) + sigma*Exyz[1];
                 pminus[2] = gamma*vxyz[2]/(CONST_C) + sigma*Exyz[2];
 
                 /* Second helper variable pplus*/
-                real d = (p->charge[i]*h[i]/(2*p->mass[i])) /
-                    sqrt( 1 + math_dot(pminus,pminus) );
+                real d = (p->charge[i]*h[i]/(2.*p->mass[i])) /
+                    sqrt( 1. + math_dot(pminus,pminus) );
                 real d2 = d*d;
 
-                real Bhat[9] = {       0,  Bxyz[2], -Bxyz[1],
-                                -Bxyz[2],        0,  Bxyz[0],
-                        Bxyz[1], -Bxyz[0],        0};
+                real Bhat[9] = {       0.,  Bxyz[2], -Bxyz[1],
+                                -Bxyz[2],        0.,  Bxyz[0],
+                        Bxyz[1], -Bxyz[0],        0.};
                 real Bhat2[9];
                 math_matmul(Bhat, Bhat, 3, 3, 3, Bhat2);
 
@@ -190,6 +193,10 @@ void step_fo_vpa(particle_simd_fo* p, real* h, B_field_data* Bdata,
                 p->err[i] = errflag;
                 p->running[i] = 0;
             }
+	
+	   //printf("	t2 = %g\n", t2);
         }
     }
+    //printf("	tt = %g %g %g\n", ttt, tt, ttt - tt);
+
 }
