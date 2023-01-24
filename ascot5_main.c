@@ -452,6 +452,14 @@ int main(int argc, char** argv) {
     MPI_Finalize();
 #endif
 
+    real diag_sum = 0.0;
+
+    for(int i = 0; i < sim.diag_offload_data.offload_array_length; i++) {
+        sum += diag_offload_array_host[i];
+    }
+
+    printf("Sum of histogram %le", sum);
+
 //#ifdef GPU
 //    diag_free_offload(&sim.diag_offload_data, &diag_offload_array_mic0);
 //    // Commenting out the following line will stop the code from crashing, but this only hides the underlying problem.
