@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include "../../offload_acc_omp.h"
 #include "../../math.h"
 #include "../../ascot5.h"
 #include "../../consts.h"
@@ -17,6 +18,13 @@
 #include "mccc_wiener.h"
 
 const int MCCC_EMPTY = -1; /**< Indicates an empty slot in wiener array */
+#ifdef _OPENACC
+#pragma acc declare copyin(MCCC_EMPTY)
+#elif _OPENMP
+#pragma omp declare target
+MCCC_EMPTY
+#pragma omp end declare target
+#endif
 
 /**
  * @brief Initializes a struct that stores generated Wiener processes
