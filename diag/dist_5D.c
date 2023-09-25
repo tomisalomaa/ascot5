@@ -104,23 +104,27 @@ void dist_5D_init(dist_5D_data* dist_data, dist_5D_offload_data* offload_data,
  * @param p_i pointer to SIMD particle struct at the start of current time step
  */
 void dist_5D_update_fo(dist_5D_data* dist, particle_simd_fo* p_f,
-                       particle_simd_fo* p_i) {
-    real phi[NSIMD];
-    real ppara[NSIMD];
-    real pperp[NSIMD];
+                       particle_simd_fo* p_i, particle_loc* p_loc) {
 
-    int i_r[NSIMD];
-    int i_phi[NSIMD];
-    int i_z[NSIMD];
-    int i_ppara[NSIMD];
-    int i_pperp[NSIMD];
-    int i_time[NSIMD];
-    int i_q[NSIMD];
+    real* phi = p_loc->r_arr1;
+    real* ppara = p_loc->r_arr2;
+    real* pperp = p_loc->r_arr3;
 
-    int ok[NSIMD];
-    real weight[NSIMD];
+    int* i_r = p_loc->i_arr1;
+    int* i_phi = p_loc->i_arr2;
+    int* i_z = p_loc->i_arr3;
+    int* i_ppara = p_loc->i_arr4;
+    int* i_pperp = p_loc->i_arr5;
+    int* i_time = p_loc->i_arr6;
+    int* i_q = p_loc->i_arr7;
+
+    int* ok = p_loc->i_arr8;
+    real* weight = p_loc->r_arr4;
 
     #pragma omp simd
+/* #pragma acc data present(phi[0:NSIMD],ppara[0:NSIMD],pperp[0:NSIMD],i_r[0:NSIMD],i_phi[0:NSIMD],i_z[0:NSIMD],i_ppara[0:NSIMD],i_pperp[0:NSIMD],i_time[0:NSIMD],i_q[0:NSIMD],ok[0:NSIMD],weight[0:NSIMD]) */
+    {
+    OMP_L0
     for(int i = 0; i < NSIMD; i++) {
         if(p_f->running[i]) {
             i_r[i] = floor((p_f->r[i] - dist->min_r)
@@ -175,6 +179,7 @@ void dist_5D_update_fo(dist_5D_data* dist, particle_simd_fo* p_f,
         }
     }
 
+    OMP_L0
     for(int i = 0; i < NSIMD; i++) {
         if(p_f->running[i] && ok[i]) {
             unsigned long index = dist_5D_index(i_r[i], i_phi[i], i_z[i],
@@ -184,11 +189,12 @@ void dist_5D_update_fo(dist_5D_data* dist, particle_simd_fo* p_f,
                                                 dist->n_ppara, dist->n_pperp,
                                                 dist->n_time, dist->n_q);
             #pragma omp atomic
+            #pragma acc atomic
             dist->histogram[index] += weight[i];
         }
     }
 }
-
+}
 /**
  * @brief Update the histogram from guiding center markers
  *
