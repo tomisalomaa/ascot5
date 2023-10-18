@@ -188,8 +188,7 @@ void dist_5D_update_fo(dist_5D_data* dist, particle_simd_fo* p_f,
                                                 dist->n_phi, dist->n_z,
                                                 dist->n_ppara, dist->n_pperp,
                                                 dist->n_time, dist->n_q);
-            #pragma omp atomic
-            #pragma acc atomic
+	    GPU_ATOMIC
             dist->histogram[index] += weight[i];
         }
     }

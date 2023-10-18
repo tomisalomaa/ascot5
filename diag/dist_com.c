@@ -133,9 +133,7 @@ void dist_COM_update_fo(dist_COM_data* dist, B_field_data* Bdata,
             unsigned long index = dist_COM_index(i_mu[i], i_Ekin[i], i_Ptor[i],
                                                 dist->n_mu,  dist->n_Ekin,
                                                 dist->n_Ptor);
-
-            #pragma omp atomic
-            #pragma acc atomic
+	    GPU_ATOMIC
             dist->histogram[index] += weight[i];
         }
     }

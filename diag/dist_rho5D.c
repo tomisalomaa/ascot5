@@ -201,8 +201,7 @@ GPU_PARALLEL_LOOP_ALL_LEVELS
                                                    dist->n_theta, dist->n_phi,
                                                    dist->n_ppara, dist->n_pperp,
                                                    dist->n_time, dist->n_q);
-            #pragma omp atomic
-            #pragma acc atomic
+	    GPU_ATOMIC
             dist->histogram[index] += weight[i];
         }
     }
